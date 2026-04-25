@@ -27,6 +27,10 @@ interface TaskDao {
     @Query("SELECT * FROM tasks ORDER BY date ASC")
     fun getAllTasks(): Flow<List<Task>>
 
+    // Zadania zaczynające się dokładnie w podanym dniu (start okna == date)
+    @Query("SELECT * FROM tasks WHERE date = :date AND status = 'pending'")
+    suspend fun getTasksStartingOn(date: String): List<Task>
+
     @Query("SELECT COUNT(*) FROM tasks WHERE plantId = :plantId AND date = :date AND type = :type")
     suspend fun countTaskForPlantAndDate(plantId: Long, date: String, type: String): Int
 }

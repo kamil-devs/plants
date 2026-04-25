@@ -15,6 +15,9 @@ class TaskRepository(private val db: AppDatabase) {
     suspend fun getActiveTasksForToday(today: String): List<Task> =
         db.taskDao().getActiveTasksForToday(today)
 
+    suspend fun getTasksStartingOn(date: String): List<Task> =
+        db.taskDao().getTasksStartingOn(date)
+
     suspend fun insertTask(task: Task) = db.taskDao().insertTask(task)
 
     suspend fun updateTask(task: Task) = db.taskDao().updateTask(task)

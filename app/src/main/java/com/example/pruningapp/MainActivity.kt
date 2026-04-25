@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -63,7 +64,8 @@ fun MainApp() {
     val bottomNavItems = listOf(
         BottomNavItem("dashboard", Icons.Default.Home, "Dashboard"),
         BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
-        BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz")
+        BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
+        BottomNavItem("settings", Icons.Default.Settings, "Ustawienia")
     )
 
     Scaffold(
@@ -103,6 +105,7 @@ fun MainApp() {
             }
             composable("calendar") { CalendarScreen(navController) }
             composable("add_plant") { AddPlantScreen(navController) }
+            composable("settings") { SettingsScreen() }
         }
     }
 }

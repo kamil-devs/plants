@@ -18,22 +18,29 @@ class NotificationWorker(
 
     override suspend fun doWork(): Result {
         val db = AppDatabase.getDatabase(applicationContext)
-        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val today = LocalDate.now().format(fmt)
+        val tomorrow = LocalDate.now().plusDays(1).format(fmt)
 
-        // Powiadom o wszystkich oknach cięcia aktywnych dziś (date <= today <= endDate)
+        // Okna aktywne dziś (date <= today <= endDate)
         db.taskDao().getActiveTasksForToday(today).forEach { task ->
             val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
-
-            val isWindowStart = task.date == today
-            val title = if (isWindowStart)
-                "Otwiera się okno cięcia — ${plant.name}"
-            else
-                "Trwa okno cięcia — ${plant.name}"
-
+            val isStart = task.date == today
             sendNotification(
-                title = title,
-                body = "Możesz przyciąć między ${task.date.substring(5)} a ${task.endDate.substring(5)}",
+                title = if (isStart) "Dziś zaczyna się okno cięcia — ${plant.name}"
+                        else "Trwa okno cięcia — ${plant.name}",
+                body = "Możesz przycinać: ${task.date.substring(5)} – ${task.endDate.substring(5)}",
                 notificationId = (task.id % Int.MAX_VALUE).toInt()
+            )
+        }
+
+        // Okna zaczynające się jutro — przypomnienie z wyprzedzeniem
+        db.taskDao().getTasksStartingOn(tomorrow).forEach { task ->
+            val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
+            sendNotification(
+                title = "Jutro zaczyna się okno cięcia — ${plant.name}",
+                body = "Okno: ${task.date.substring(5)} – ${task.endDate.substring(5)}",
+                notificationId = (task.id + 500_000).toInt()
             )
         }
 
