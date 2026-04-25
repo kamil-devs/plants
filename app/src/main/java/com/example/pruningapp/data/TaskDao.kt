@@ -6,14 +6,17 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TaskDao {
 
-    @Query("SELECT * FROM tasks WHERE date = :date ORDER BY type ASC")
-    fun getTasksByDate(date: String): Flow<List<Task>>
+    // Zadania, których okno zawiera podaną datę (date <= target <= endDate)
+    @Query("SELECT * FROM tasks WHERE date <= :date AND endDate >= :date ORDER BY date ASC")
+    fun getTasksContainingDate(date: String): Flow<List<Task>>
 
-    @Query("SELECT * FROM tasks WHERE date >= :fromDate ORDER BY date ASC LIMIT :limit")
-    fun getUpcomingTasks(fromDate: String, limit: Int): Flow<List<Task>>
+    // Aktywne lub przyszłe zadania (okno nie skończyło się przed today)
+    @Query("SELECT * FROM tasks WHERE endDate >= :today ORDER BY date ASC LIMIT :limit")
+    fun getUpcomingTasks(today: String, limit: Int): Flow<List<Task>>
 
-    @Query("SELECT * FROM tasks WHERE date = :date AND status = 'pending'")
-    suspend fun getPendingTasksForDate(date: String): List<Task>
+    // Aktywne zadania na powiadomienia (okno otwarte dziś, status pending)
+    @Query("SELECT * FROM tasks WHERE date <= :today AND endDate >= :today AND status = 'pending'")
+    suspend fun getActiveTasksForToday(today: String): List<Task>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTask(task: Task)
@@ -23,9 +26,6 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks ORDER BY date ASC")
     fun getAllTasks(): Flow<List<Task>>
-
-    @Query("SELECT * FROM tasks WHERE date BETWEEN :startDate AND :endDate ORDER BY date ASC")
-    fun getTasksInRange(startDate: String, endDate: String): Flow<List<Task>>
 
     @Query("SELECT COUNT(*) FROM tasks WHERE plantId = :plantId AND date = :date AND type = :type")
     suspend fun countTaskForPlantAndDate(plantId: Long, date: String, type: String): Int

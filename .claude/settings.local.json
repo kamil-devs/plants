@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\\\\plant-pruning-app\\\\app\\\\src\\\\main\\\\java\\\\com\\\\example\\\\pruningapp\\\\data\\\\\\\\\")",
+      "Bash(dir \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\\\\plant-pruning-app\\\\app\\\\src\\\\main\\\\java\\\\com\\\\example\\\\pruningapp\\\\data\")"
+    ]
+  }
+}

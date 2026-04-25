@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.pruningapp.data.Task
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import java.time.LocalDate
@@ -38,9 +39,28 @@ fun CalendarScreen(
     val allTasks by taskViewModel.allTasks.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
 
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val tasksForSelectedDate = allTasks.filter { it.date == selectedDate.format(dateFormatter) }
-    val datesWithTasks = allTasks.map { it.date }.toSet()
+    val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    // Zbiór dat pokrytych przez okna cięcia (rozwinięcie zakresów date..endDate)
+    val datesInWindows: Set<String> = remember(allTasks) {
+        val result = mutableSetOf<String>()
+        allTasks.forEach { task ->
+            val start = runCatching { LocalDate.parse(task.date) }.getOrNull() ?: return@forEach
+            val end = runCatching { LocalDate.parse(task.endDate) }.getOrNull() ?: return@forEach
+            var cur = start
+            while (!cur.isAfter(end)) {
+                result.add(cur.format(fmt))
+                cur = cur.plusDays(1)
+            }
+        }
+        result
+    }
+
+    // Zadania aktywne dla zaznaczonego dnia (okno zawiera tę datę)
+    val selectedStr = selectedDate.format(fmt)
+    val tasksForSelected = allTasks.filter { task ->
+        task.date <= selectedStr && task.endDate >= selectedStr
+    }
 
     Scaffold(
         topBar = {
@@ -57,6 +77,7 @@ fun CalendarScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Nawigacja po miesiącach
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +89,8 @@ fun CalendarScreen(
                     Icon(Icons.Default.ChevronLeft, "Poprzedni miesiąc")
                 }
                 Text(
-                    text = "${displayedMonth.month.getDisplayName(TextStyle.FULL, Locale("pl"))
+                    text = "${displayedMonth.month
+                        .getDisplayName(TextStyle.FULL, Locale("pl"))
                         .replaceFirstChar { it.uppercase() }} ${displayedMonth.year}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
@@ -78,11 +100,8 @@ fun CalendarScreen(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
+            // Nagłówki dni tygodnia
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
                 listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd").forEach { day ->
                     Text(
                         text = day,
@@ -97,29 +116,27 @@ fun CalendarScreen(
             CalendarGrid(
                 yearMonth = displayedMonth,
                 selectedDate = selectedDate,
-                datesWithTasks = datesWithTasks,
+                datesInWindows = datesInWindows,
                 onDateSelected = { selectedDate = it }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            val displayFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("pl"))
+            val displayFmt = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("pl"))
             Text(
-                text = "Zadania: ${selectedDate.format(displayFormatter)}",
+                text = "Okna cięcia: ${selectedDate.format(displayFmt)}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            if (tasksForSelectedDate.isEmpty()) {
+            if (tasksForSelected.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Brak zadań na ten dzień",
+                        "Brak aktywnych okien cięcia",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -129,7 +146,7 @@ fun CalendarScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(tasksForSelectedDate) { task ->
+                    items(tasksForSelected) { task ->
                         val plant = plants.firstOrNull { it.id == task.plantId }
                         TaskCard(
                             task = task,
@@ -150,15 +167,14 @@ fun CalendarScreen(
 fun CalendarGrid(
     yearMonth: YearMonth,
     selectedDate: LocalDate,
-    datesWithTasks: Set<String>,
+    datesInWindows: Set<String>,
     onDateSelected: (LocalDate) -> Unit
 ) {
     val firstDayOffset = (yearMonth.atDay(1).dayOfWeek.value - 1) % 7
     val daysInMonth = yearMonth.lengthOfMonth()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val today = LocalDate.now()
-    val totalCells = firstDayOffset + daysInMonth
-    val rows = (totalCells + 6) / 7
+    val rows = (firstDayOffset + daysInMonth + 6) / 7
 
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         repeat(rows) { row ->
@@ -167,10 +183,10 @@ fun CalendarGrid(
                     val dayNumber = row * 7 + col - firstDayOffset + 1
                     if (dayNumber in 1..daysInMonth) {
                         val date = yearMonth.atDay(dayNumber)
-                        val dateStr = date.format(formatter)
+                        val dateStr = date.format(fmt)
                         val isSelected = date == selectedDate
                         val isToday = date == today
-                        val hasTasks = dateStr in datesWithTasks
+                        val inWindow = dateStr in datesInWindows
 
                         Box(
                             modifier = Modifier
@@ -181,6 +197,7 @@ fun CalendarGrid(
                                     color = when {
                                         isSelected -> MaterialTheme.colorScheme.primary
                                         isToday -> MaterialTheme.colorScheme.primaryContainer
+                                        inWindow -> MaterialTheme.colorScheme.secondaryContainer
                                         else -> MaterialTheme.colorScheme.surface
                                     },
                                     shape = MaterialTheme.shapes.small
@@ -188,27 +205,17 @@ fun CalendarGrid(
                                 .clickable { onDateSelected(date) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = dayNumber.toString(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                    else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (isToday || isSelected) FontWeight.Bold
-                                    else FontWeight.Normal
-                                )
-                                if (hasTasks) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(4.dp)
-                                            .background(
-                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                                else MaterialTheme.colorScheme.primary,
-                                                shape = MaterialTheme.shapes.extraSmall
-                                            )
-                                    )
-                                }
-                            }
+                            Text(
+                                text = dayNumber.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = when {
+                                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                                    inWindow -> MaterialTheme.colorScheme.onSecondaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                                fontWeight = if (isToday || isSelected) FontWeight.Bold
+                                else FontWeight.Normal
+                            )
                         }
                     } else {
                         Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))

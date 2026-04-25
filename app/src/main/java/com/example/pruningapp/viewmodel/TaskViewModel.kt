@@ -21,16 +21,16 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     val today: String = LocalDate.now().format(formatter)
 
+    // Aktywne + przyszłe okna (endDate >= dziś)
     val upcomingTasks: StateFlow<List<Task>> = taskRepository.getUpcomingTasks(today, 20)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTasks: StateFlow<List<Task>> = taskRepository.getAllTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun getTasksByDate(date: String): Flow<List<Task>> = taskRepository.getTasksByDate(date)
-
-    fun getTasksInRange(startDate: String, endDate: String): Flow<List<Task>> =
-        taskRepository.getTasksInRange(startDate, endDate)
+    // Zadania, których okno zawiera daną datę
+    fun getTasksForDate(date: String): Flow<List<Task>> =
+        taskRepository.getTasksContainingDate(date)
 
     fun updateTaskStatus(task: Task, status: String) {
         viewModelScope.launch {

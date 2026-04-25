@@ -12,6 +12,7 @@ class JsonImporter(
 ) {
     private val gson = Gson()
     private val fullFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val windowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     suspend fun import() {
         val json = context.assets.open("plants.json").bufferedReader().use { it.readText() }
@@ -34,44 +35,42 @@ class JsonImporter(
                     type = pruningType
                 )
                 db.plantDao().insertPruningRule(rule)
-                generateTasksForWindow(plantId, window.start, window.end, pruningType)
+                generateTask(plantId, window.start, window.end, pruningType)
             }
         }
     }
 
-    private suspend fun generateTasksForWindow(
+    // Generuje JEDNO zadanie na okno cięcia na rok — nie per dzień.
+    // Okno to zakres, w którym można ciąć, nie wymóg codziennego cięcia.
+    private suspend fun generateTask(
         plantId: Long,
-        start: String,
-        end: String,
+        start: String,   // MM-dd, np. "04-01"
+        end: String,     // MM-dd, np. "09-01"
         type: String
     ) {
         val today = LocalDate.now()
-        val windowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
         for (yearOffset in 0..1) {
             val year = today.year + yearOffset
             val startDate = LocalDate.parse("$year-$start", windowFormatter)
             val endDate = LocalDate.parse("$year-$end", windowFormatter)
 
-            if (endDate.isBefore(startDate)) continue
+            // Pomiń okna, które całkowicie minęły
+            if (endDate.isBefore(today)) continue
 
-            var current = startDate
-            while (!current.isAfter(endDate)) {
-                if (!current.isBefore(today)) {
-                    val dateStr = current.format(fullFormatter)
-                    val count = db.taskDao().countTaskForPlantAndDate(plantId, dateStr, type)
-                    if (count == 0) {
-                        db.taskDao().insertTask(
-                            Task(
-                                plantId = plantId,
-                                date = dateStr,
-                                type = type,
-                                status = "pending"
-                            )
-                        )
-                    }
-                }
-                current = current.plusDays(1)
+            val count = db.taskDao().countTaskForPlantAndDate(
+                plantId, startDate.format(fullFormatter), type
+            )
+            if (count == 0) {
+                db.taskDao().insertTask(
+                    Task(
+                        plantId = plantId,
+                        date = startDate.format(fullFormatter),
+                        endDate = endDate.format(fullFormatter),
+                        type = type,
+                        status = "pending"
+                    )
+                )
             }
         }
     }

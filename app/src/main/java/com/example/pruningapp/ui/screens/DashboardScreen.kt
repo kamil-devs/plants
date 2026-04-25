@@ -56,7 +56,7 @@ fun DashboardScreen(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Nadchodzące zadania",
+                    text = "Okna cięcia",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -73,7 +73,7 @@ fun DashboardScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Brak zaplanowanych zadań",
+                                text = "Brak zaplanowanych okien cięcia",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -81,7 +81,7 @@ fun DashboardScreen(
                     }
                 }
             } else {
-                items(upcomingTasks.take(10)) { task ->
+                items(upcomingTasks.take(15)) { task ->
                     val plant = plants.firstOrNull { it.id == task.plantId }
                     TaskCard(
                         task = task,
@@ -105,20 +105,24 @@ fun TaskCard(
     onDone: () -> Unit,
     onClick: () -> Unit
 ) {
-    val taskDate = runCatching { LocalDate.parse(task.date) }.getOrNull()
     val today = LocalDate.now()
-    val isToday = taskDate == today
-    val isPast = taskDate?.isBefore(today) == true
-    val displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val startDate = runCatching { LocalDate.parse(task.date) }.getOrNull()
+    val endDate = runCatching { LocalDate.parse(task.endDate) }.getOrNull()
+
+    val isActive = startDate != null && endDate != null &&
+            !today.isBefore(startDate) && !today.isAfter(endDate)
+    val isFuture = startDate?.isAfter(today) == true
+    val isDone = task.status == "done"
+
+    val displayFmt = DateTimeFormatter.ofPattern("dd.MM")
 
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                task.status == "done" -> MaterialTheme.colorScheme.surfaceVariant
-                isToday -> MaterialTheme.colorScheme.primaryContainer
-                isPast -> MaterialTheme.colorScheme.errorContainer
+                isDone -> MaterialTheme.colorScheme.surfaceVariant
+                isActive -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -136,21 +140,29 @@ fun TaskCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                val rangeLabel = if (startDate != null && endDate != null)
+                    "${startDate.format(displayFmt)} – ${endDate.format(displayFmt)}"
+                else task.date
                 Text(
-                    text = "${task.type.replaceFirstChar { it.uppercase() }} • ${taskDate?.format(displayFormatter) ?: task.date}",
+                    text = "${task.type.replaceFirstChar { it.uppercase() }} • $rangeLabel",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (isToday) {
-                    Text(
-                        text = "Dziś!",
+                when {
+                    isActive -> Text(
+                        text = "Aktywne teraz",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
+                    isFuture -> Text(
+                        text = "Zaczyna się ${startDate!!.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
-            if (task.status == "pending") {
+            if (!isDone) {
                 TextButton(onClick = onDone) { Text("Wykonano") }
             } else {
                 Text(

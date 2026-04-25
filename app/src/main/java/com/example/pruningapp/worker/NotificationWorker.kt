@@ -18,24 +18,21 @@ class NotificationWorker(
 
     override suspend fun doWork(): Result {
         val db = AppDatabase.getDatabase(applicationContext)
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val today = LocalDate.now().format(formatter)
-        val tomorrow = LocalDate.now().plusDays(1).format(formatter)
+        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
-        val todayTasks = db.taskDao().getPendingTasksForDate(today)
-        val tomorrowTasks = db.taskDao().getPendingTasksForDate(tomorrow)
-
-        (todayTasks + tomorrowTasks).forEach { task ->
+        // Powiadom o wszystkich oknach cięcia aktywnych dziś (date <= today <= endDate)
+        db.taskDao().getActiveTasksForToday(today).forEach { task ->
             val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
-            val rules = db.plantDao().getPruningRulesForPlant(task.plantId)
-            val rule = rules.firstOrNull { it.type == task.type } ?: return@forEach
-            val label = if (task.date == today) "Dziś" else "Jutro"
+
+            val isWindowStart = task.date == today
+            val title = if (isWindowStart)
+                "Otwiera się okno cięcia — ${plant.name}"
+            else
+                "Trwa okno cięcia — ${plant.name}"
 
             sendNotification(
-                plantName = plant.name,
-                start = rule.startMonthDay,
-                end = rule.endMonthDay,
-                label = label,
+                title = title,
+                body = "Możesz przyciąć między ${task.date.substring(5)} a ${task.endDate.substring(5)}",
                 notificationId = (task.id % Int.MAX_VALUE).toInt()
             )
         }
@@ -43,17 +40,11 @@ class NotificationWorker(
         return Result.success()
     }
 
-    private fun sendNotification(
-        plantName: String,
-        start: String,
-        end: String,
-        label: String,
-        notificationId: Int
-    ) {
+    private fun sendNotification(title: String, body: String, notificationId: Int) {
         val notification = NotificationCompat.Builder(applicationContext, App.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_plant_notification)
-            .setContentTitle("Czas przyciąć $plantName")
-            .setContentText("$label • Okno cięcia: $start–$end")
+            .setContentTitle(title)
+            .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()
