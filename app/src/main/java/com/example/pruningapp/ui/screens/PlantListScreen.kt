@@ -46,10 +46,7 @@ fun PlantListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "Brak roślin",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text("Brak roślin", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "Dodaj pierwszą roślinę przyciskiem +",
@@ -67,10 +64,11 @@ fun PlantListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                items(plants) { plant ->
+                items(plants, key = { it.id }) { plant ->
                     PlantCard(
                         plant = plant,
-                        onClick = { navController.navigate("plant_detail/${plant.id}") }
+                        onClick = { navController.navigate("plant_detail/${plant.id}") },
+                        onToggleOwned = { viewModel.toggleOwned(plant) }
                     )
                 }
             }

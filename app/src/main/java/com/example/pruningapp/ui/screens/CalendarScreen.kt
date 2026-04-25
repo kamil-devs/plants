@@ -17,7 +17,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pruningapp.data.Task
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import java.time.LocalDate
@@ -56,7 +55,6 @@ fun CalendarScreen(
         result
     }
 
-    // Zadania aktywne dla zaznaczonego dnia (okno zawiera tę datę)
     val selectedStr = selectedDate.format(fmt)
     val tasksForSelected = allTasks.filter { task ->
         task.date <= selectedStr && task.endDate >= selectedStr
@@ -77,7 +75,6 @@ fun CalendarScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Nawigacja po miesiącach
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,7 +97,6 @@ fun CalendarScreen(
                 }
             }
 
-            // Nagłówki dni tygodnia
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
                 listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd").forEach { day ->
                     Text(
@@ -146,12 +142,14 @@ fun CalendarScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(tasksForSelected) { task ->
+                    items(tasksForSelected, key = { it.id }) { task ->
                         val plant = plants.firstOrNull { it.id == task.plantId }
                         TaskCard(
                             task = task,
                             plantName = plant?.name ?: "Nieznana",
-                            onDone = { taskViewModel.updateTaskStatus(task, "done") },
+                            onCheckedChange = { done ->
+                                taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
+                            },
                             onClick = {
                                 plant?.let { navController.navigate("plant_detail/${it.id}") }
                             }

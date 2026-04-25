@@ -22,11 +22,10 @@ class App : Application() {
         createNotificationChannel()
         scheduleNotificationWorker()
 
+        // Importuj rośliny jeśli baza jest pusta (działa też po destructive migration)
         CoroutineScope(Dispatchers.IO).launch {
-            val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-            if (!prefs.getBoolean("json_imported", false)) {
+            if (database.plantDao().getPlantCount() == 0) {
                 JsonImporter(this@App, database).import()
-                prefs.edit().putBoolean("json_imported", true).apply()
             }
         }
     }

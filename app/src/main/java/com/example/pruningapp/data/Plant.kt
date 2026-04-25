@@ -9,5 +9,6 @@ data class Plant(
     val id: Long = 0,
     val name: String,
     val type: String,
-    val instructions: String
+    val instructions: String,
+    val owned: Boolean = false
 )

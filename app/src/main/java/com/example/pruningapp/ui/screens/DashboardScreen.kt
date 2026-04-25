@@ -30,6 +30,10 @@ fun DashboardScreen(
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("pl"))
 
+    // Tylko rośliny oznaczone jako posiadane
+    val ownedIds = remember(plants) { plants.filter { it.owned }.map { it.id }.toSet() }
+    val visibleTasks = upcomingTasks.filter { it.plantId in ownedIds }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -63,17 +67,30 @@ fun DashboardScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            if (upcomingTasks.isEmpty()) {
+            if (ownedIds.isEmpty()) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Brak zaplanowanych okien cięcia",
+                                "Zaznacz rośliny jako posiadane w zakładce Rośliny",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else if (visibleTasks.isEmpty()) {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Brak aktywnych okien cięcia",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -81,12 +98,14 @@ fun DashboardScreen(
                     }
                 }
             } else {
-                items(upcomingTasks.take(15)) { task ->
+                items(visibleTasks, key = { it.id }) { task ->
                     val plant = plants.firstOrNull { it.id == task.plantId }
                     TaskCard(
                         task = task,
-                        plantName = plant?.name ?: "Nieznana roślina",
-                        onDone = { taskViewModel.updateTaskStatus(task, "done") },
+                        plantName = plant?.name ?: "Nieznana",
+                        onCheckedChange = { done ->
+                            taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
+                        },
                         onClick = { plant?.let { navController.navigate("plant_detail/${it.id}") } }
                     )
                 }
@@ -102,18 +121,15 @@ fun DashboardScreen(
 fun TaskCard(
     task: Task,
     plantName: String,
-    onDone: () -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
     val today = LocalDate.now()
     val startDate = runCatching { LocalDate.parse(task.date) }.getOrNull()
     val endDate = runCatching { LocalDate.parse(task.endDate) }.getOrNull()
-
     val isActive = startDate != null && endDate != null &&
             !today.isBefore(startDate) && !today.isAfter(endDate)
-    val isFuture = startDate?.isAfter(today) == true
     val isDone = task.status == "done"
-
     val displayFmt = DateTimeFormatter.ofPattern("dd.MM")
 
     Card(
@@ -130,7 +146,7 @@ fun TaskCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -140,37 +156,34 @@ fun TaskCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                val rangeLabel = if (startDate != null && endDate != null)
+                val range = if (startDate != null && endDate != null)
                     "${startDate.format(displayFmt)} – ${endDate.format(displayFmt)}"
                 else task.date
                 Text(
-                    text = "${task.type.replaceFirstChar { it.uppercase() }} • $rangeLabel",
+                    text = "${task.type.replaceFirstChar { it.uppercase() }} • $range",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                when {
-                    isActive -> Text(
+                if (isActive && !isDone) {
+                    Text(
                         text = "Aktywne teraz",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
-                    isFuture -> Text(
-                        text = "Zaczyna się ${startDate!!.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                } else if (!isActive && startDate != null) {
+                    Text(
+                        text = "Od ${startDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            if (!isDone) {
-                TextButton(onClick = onDone) { Text("Wykonano") }
-            } else {
-                Text(
-                    text = "✓",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+
+            Checkbox(
+                checked = isDone,
+                onCheckedChange = onCheckedChange
+            )
         }
     }
 }

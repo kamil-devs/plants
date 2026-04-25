@@ -1,11 +1,9 @@
 package com.example.pruningapp.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 private val LightColorScheme = lightColorScheme(
     primary = Color(0xFF2E7D32),
@@ -20,6 +18,8 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color(0xFF1C1B1F),
     surface = Color(0xFFFFFFFF),
     onSurface = Color(0xFF1C1B1F),
+    surfaceVariant = Color(0xFFE8F5E9),
+    onSurfaceVariant = Color(0xFF4A4A4A),
     error = Color(0xFFB00020),
     onError = Color.White,
     errorContainer = Color(0xFFFFDAD6),
@@ -38,23 +38,18 @@ private val DarkColorScheme = darkColorScheme(
     background = Color(0xFF1C1B1F),
     onBackground = Color(0xFFE6E1E5),
     surface = Color(0xFF1C1B1F),
-    onSurface = Color(0xFFE6E1E5)
+    onSurface = Color(0xFFE6E1E5),
+    surfaceVariant = Color(0xFF2A3B2A),
+    onSurfaceVariant = Color(0xFFB0BEC5)
 )
 
 @Composable
 fun PlantPruningTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // dynamicColor wyłączone — zawsze używamy zielonej palety
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

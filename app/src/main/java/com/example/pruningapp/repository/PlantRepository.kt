@@ -15,10 +15,14 @@ class PlantRepository(private val db: AppDatabase) {
 
     suspend fun deletePlant(plant: Plant) = db.plantDao().deletePlant(plant)
 
+    suspend fun setOwned(id: Long, owned: Boolean) = db.plantDao().setOwned(id, owned)
+
     suspend fun getPruningRules(plantId: Long): List<PruningRule> =
         db.plantDao().getPruningRulesForPlant(plantId)
 
     suspend fun insertPruningRule(rule: PruningRule) = db.plantDao().insertPruningRule(rule)
 
     suspend fun getAllPruningRules(): List<PruningRule> = db.plantDao().getAllPruningRules()
+
+    suspend fun getPlantCount(): Int = db.plantDao().getPlantCount()
 }
