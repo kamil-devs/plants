@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Plant Pruning App</string>
+    <string name="channel_name">Przypomnienia o cięciu</string>
+    <string name="channel_description">Codzienne przypomnienia o przycinaniu roślin</string>
+</resources>
