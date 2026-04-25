@@ -62,7 +62,7 @@ fun MainApp() {
     val navController = rememberNavController()
 
     val bottomNavItems = listOf(
-        BottomNavItem("dashboard", Icons.Default.Home, "Dashboard"),
+        BottomNavItem("dashboard", Icons.Default.Home, "Główna"),
         BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
         BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
         BottomNavItem("settings", Icons.Default.Settings, "Ustawienia")
