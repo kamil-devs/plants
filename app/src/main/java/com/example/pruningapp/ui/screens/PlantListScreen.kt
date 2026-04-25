@@ -59,7 +59,7 @@ fun PlantListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Moje rośliny") },
+                title = { Text("Moje rosliny") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -67,7 +67,7 @@ fun PlantListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { navController.navigate("add_plant") }) {
-                Icon(Icons.Default.Add, contentDescription = "Dodaj roślinę")
+                Icon(Icons.Default.Add, contentDescription = "Dodaj rosline")
             }
         }
     ) { padding ->
@@ -79,14 +79,14 @@ fun PlantListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Szukaj roślin…") },
+                placeholder = { Text("Szukaj roslin...") },
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null)
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Wyczyść")
+                            Icon(Icons.Default.Close, contentDescription = "Wyczysc")
                         }
                     }
                 },
@@ -105,12 +105,12 @@ fun PlantListScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                "Brak roślin",
+                                text = "Brak roslin",
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Dodaj pierwszą roślinę przyciskiem +",
+                                text = "Dodaj pierwsza rosline przyciskiem +",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -124,7 +124,7 @@ fun PlantListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Brak wyników dla „$searchQuery"",
+                            text = "Brak wynikow dla: $searchQuery",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
