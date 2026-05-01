@@ -10,5 +10,8 @@ data class Plant(
     val name: String,
     val type: String,
     val instructions: String,
-    val owned: Boolean = false
+    val owned: Boolean = false,
+    val harvestStart: String? = null,
+    val harvestEnd: String? = null,
+    val harvestAppearance: String? = null
 )

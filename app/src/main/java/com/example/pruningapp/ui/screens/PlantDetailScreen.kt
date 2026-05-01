@@ -19,6 +19,20 @@ import com.example.pruningapp.viewmodel.PlantViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
+private val polishMonths = listOf(
+    "stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca",
+    "lipca", "sierpnia", "września", "października", "listopada", "grudnia"
+)
+
+private fun formatMonthDay(monthDay: String): String {
+    return try {
+        val parts = monthDay.split("-")
+        "${parts[1].toInt()} ${polishMonths[parts[0].toInt() - 1]}"
+    } catch (e: Exception) {
+        monthDay
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlantDetailScreen(
@@ -115,6 +129,59 @@ fun PlantDetailScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
+                            }
+                        }
+                    }
+                }
+
+                if (currentPlant.harvestStart != null) {
+                    item {
+                        Text(
+                            "Zbiory",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Termin zbioru",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Text(
+                                        "${formatMonthDay(currentPlant.harvestStart)} – ${formatMonthDay(currentPlant.harvestEnd ?: "")}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                                if (!currentPlant.harvestAppearance.isNullOrBlank()) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
+                                    Text(
+                                        "Jak wyglądają gotowe owoce:",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        currentPlant.harvestAppearance,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
                             }
                         }
                     }

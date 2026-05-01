@@ -23,7 +23,10 @@ class JsonImporter(
             val plant = Plant(
                 name = plantJson.name,
                 type = plantJson.type,
-                instructions = gson.toJson(plantJson.instructions)
+                instructions = gson.toJson(plantJson.instructions),
+                harvestStart = plantJson.harvest?.start,
+                harvestEnd = plantJson.harvest?.end,
+                harvestAppearance = plantJson.harvest?.appearance
             )
             val plantId = db.plantDao().insertPlant(plant)
 
@@ -79,11 +82,18 @@ class JsonImporter(
         val name: String,
         val type: String,
         val pruning: Map<String, PruningWindow>,
-        val instructions: List<String>
+        val instructions: List<String>,
+        val harvest: HarvestInfo? = null
     )
 
     data class PruningWindow(
         val start: String,
         val end: String
+    )
+
+    data class HarvestInfo(
+        val start: String,
+        val end: String,
+        val appearance: String
     )
 }

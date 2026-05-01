@@ -223,7 +223,12 @@
       "Usuń wilki.",
       "Prześwietl koronę.",
       "Skróć pędy jednoroczne."
-    ]
+    ],
+    "harvest": {
+      "start": "08-20",
+      "end": "10-15",
+      "appearance": "Owoce mają pełne zabarwienie charakterystyczne dla odmiany (czerwone, żółte lub zielone). Dają się łatwo obrywać po delikatnym przekręceniu. Skórka twarda, miąższ soczysty i chrupiący."
+    }
   },
   {
     "name": "Grusza",
@@ -234,7 +239,12 @@
     "instructions": [
       "Usuń pędy rosnące do środka.",
       "Prześwietl koronę."
-    ]
+    ],
+    "harvest": {
+      "start": "08-01",
+      "end": "10-15",
+      "appearance": "Skórka żółknie lub brunatnieje zależnie od odmiany. Owoc lekko ustępuje pod palcem przy szypułce. Wiele odmian zbiera się nieco przed pełną dojrzałością i dosypia w chłodnym miejscu."
+    }
   },
   {
     "name": "Śliwa",
@@ -245,7 +255,12 @@
     "instructions": [
       "Najlepsze cięcie po zbiorach.",
       "Usuń chore pędy."
-    ]
+    ],
+    "harvest": {
+      "start": "07-15",
+      "end": "09-15",
+      "appearance": "Owoce mają intensywny kolor właściwy dla odmiany (fioletowy, żółty lub czerwony), pokryte woskowatym nalotem (siną oprószką). Lekko miękkie pod dotykiem, słodkie i aromatyczne."
+    }
   },
   {
     "name": "Wiśnia",
@@ -256,7 +271,12 @@
     "instructions": [
       "Tnij po zbiorach.",
       "Usuń pędy krzyżujące się."
-    ]
+    ],
+    "harvest": {
+      "start": "06-10",
+      "end": "07-20",
+      "appearance": "Ciemnoczerwone lub prawie czarne, błyszczące owoce z zieloną, elastyczną szypułką. Pełne, soczyste i kwaśno-słodkie. Zrywamy całe grona."
+    }
   },
   {
     "name": "Czereśnia",
@@ -267,7 +287,12 @@
     "instructions": [
       "Tnij po zbiorach.",
       "Unikaj cięcia zimą."
-    ]
+    ],
+    "harvest": {
+      "start": "06-01",
+      "end": "07-15",
+      "appearance": "Ciemnoczerwone lub żółto-czerwone owoce z błyszczącą skórką. Twarde i soczyste, łatwo odrywają się od szypułki. Im ciemniejsze zabarwienie, tym słodsze."
+    }
   },
   {
     "name": "Brzoskwinia",
@@ -278,7 +303,12 @@
     "instructions": [
       "Tnij przed kwitnieniem.",
       "Usuń pędy skierowane do środka."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "09-01",
+      "appearance": "Żółto-pomarańczowe lub czerwonawe zabarwienie, skórka pokryta delikatnym puchem. Lekko miękkie przy szypułce, intensywnie aromatyczne. Zrywamy ostrożnie, trzymając za owoc, nie ciągnąc za szypułkę."
+    }
   },
   {
     "name": "Morela",
@@ -289,7 +319,12 @@
     "instructions": [
       "Usuń chore pędy.",
       "Prześwietl koronę."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "08-15",
+      "appearance": "Pomarańczowe lub żółto-pomarańczowe owoce, lekko miękkie w dotyku, aromatyczne. Pestka łatwo oddziela się od miąższu. Dojrzałe opadają same lub zrywają się bez oporu."
+    }
   },
   {
     "name": "Porzeczka czarna",
@@ -300,7 +335,12 @@
     "instructions": [
       "Usuń najstarsze pędy.",
       "Zostaw młode, silne pędy."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "08-10",
+      "appearance": "Czarne, matowe jagody w gronach – wszystkie powinny być jednolicie ciemne. Grona zrywamy w całości, gdy ostatnia jagoda dojrzeje. Słodko-kwaśny, intensywny smak i aromat."
+    }
   },
   {
     "name": "Porzeczka czerwona",
@@ -311,7 +351,12 @@
     "instructions": [
       "Usuń pędy przy ziemi.",
       "Prześwietl krzew."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "08-01",
+      "appearance": "Jasnoczerwone, przezroczyste i błyszczące jagody w zwisających gronach. Zrywamy całe grona, gdy wszystkie jagody są w pełni wybarwione. Kwaśny, orzeźwiający smak."
+    }
   },
   {
     "name": "Agrest",
@@ -322,7 +367,12 @@
     "instructions": [
       "Usuń pędy krzyżujące się.",
       "Prześwietl środek krzewu."
-    ]
+    ],
+    "harvest": {
+      "start": "06-15",
+      "end": "08-15",
+      "appearance": "Do przetworów: twarde, zielone jagody zrywamy wcześniej (czerwiec). Do jedzenia: owoce w pełni zabarwione (zielone, żółte lub czerwone zależnie od odmiany), lekko miękkie i słodkie."
+    }
   },
   {
     "name": "Malina letnia",
@@ -333,7 +383,12 @@
     "instructions": [
       "Wytnij pędy, które owocowały.",
       "Zostaw młode pędy."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "08-15",
+      "appearance": "Ciemnoczerwone owoce, które bez wysiłku odchodzą od szypułki (pestki). Miękkie, aromatyczne, błyszczące. Zbieramy codziennie lub co dwa dni, bo szybko przejrzewają."
+    }
   },
   {
     "name": "Malina powtarzająca",
@@ -344,7 +399,12 @@
     "instructions": [
       "Ściąć wszystkie pędy przy ziemi.",
       "Pozostawić tylko nowe przyrosty."
-    ]
+    ],
+    "harvest": {
+      "start": "09-01",
+      "end": "10-20",
+      "appearance": "Ciemnoczerwone owoce na szczytach pędów jednorocznych. Odchodzą od pestki bez oporu, soczyste i aromatyczne. Drugi zbiór w roku – owoce często smaczniejsze niż letnie."
+    }
   },
   {
     "name": "Jeżyna",
@@ -355,7 +415,12 @@
     "instructions": [
       "Usuń pędy dwuletnie.",
       "Zostaw młode pędy."
-    ]
+    ],
+    "harvest": {
+      "start": "07-20",
+      "end": "09-15",
+      "appearance": "Głęboko czarne, lśniące owoce – wszystkie kosteczki jednolicie ciemne. Lekko miękkie w dotyku, słodkie. Zrywamy łatwo bez żadnego oporu. Niedojrzałe są czerwone lub fioletowe – zostawiamy je."
+    }
   },
   {
     "name": "Borówka wysoka",
@@ -366,7 +431,12 @@
     "instructions": [
       "Usuń stare pędy.",
       "Zostaw 6–8 silnych pędów."
-    ]
+    ],
+    "harvest": {
+      "start": "07-01",
+      "end": "09-01",
+      "appearance": "Niebiesko-sine jagody pokryte woskowym nalotem (pruiną), z charakterystycznym koronkowym szczytem. Twarde w dotyku, słodkie. Zbieramy partiami co 5–7 dni – nie wszystkie dojrzewają jednocześnie."
+    }
   },
   {
     "name": "Orzech włoski",
@@ -377,7 +447,12 @@
     "instructions": [
       "Tnij tylko późnym latem.",
       "Unikaj cięcia zimą."
-    ]
+    ],
+    "harvest": {
+      "start": "09-10",
+      "end": "10-20",
+      "appearance": "Zielona okrywa (łupina) pęka i samoistnie odchodzi, odsłaniając brązową skorupę orzecha. Orzechy same zaczynają opadać z drzewa. Zbieramy z ziemi, suszymy w przewiewnym miejscu przez 2–3 tygodnie."
+    }
   },
   {
     "name": "Winorośl",
@@ -388,7 +463,12 @@
     "instructions": [
       "Tnij przed ruszeniem soków.",
       "Skróć łozy do 2–3 oczek."
-    ]
+    ],
+    "harvest": {
+      "start": "09-01",
+      "end": "10-15",
+      "appearance": "Pełne zabarwienie właściwe dla odmiany (zielone, żółte, czerwone lub granatowe). Jagody miękkie, słodkie – próbka smakowa to najlepsza weryfikacja. Szypułki grona zaczynają brązowieć, nasiona są brązowe."
+    }
   },
   {
     "name": "Leszczyna",
@@ -399,7 +479,12 @@
     "instructions": [
       "Usuń odrosty.",
       "Prześwietl koronę."
-    ]
+    ],
+    "harvest": {
+      "start": "09-01",
+      "end": "10-01",
+      "appearance": "Brązowe orzechy, które luźno wypadają z zielonego kielicha lub same opadają na ziemię. Łupina twarda, jądro kremowe. Zbieramy z ziemi i suszymy w suchym miejscu."
+    }
   },
   {
     "name": "Pigwowiec",
@@ -410,7 +495,12 @@
     "instructions": [
       "Tnij po kwitnieniu.",
       "Usuń stare pędy."
-    ]
+    ],
+    "harvest": {
+      "start": "10-01",
+      "end": "11-15",
+      "appearance": "Żółto-zielone, twarde i intensywnie aromatyczne owoce. Zbieramy po pierwszych przymrozkach lub tuż przed nimi. Nie nadają się do jedzenia na surowo – przeznaczone wyłącznie do przetworów (dżemy, galaretki, nalewki)."
+    }
   },
   {
     "name": "Dereń jadalny",
@@ -421,7 +511,12 @@
     "instructions": [
       "Usuń pędy krzyżujące się.",
       "Prześwietl środek krzewu."
-    ]
+    ],
+    "harvest": {
+      "start": "08-01",
+      "end": "09-15",
+      "appearance": "Ciemnoczerwone lub prawie czarne, podłużne owoce (podobne do oliwek). Lekko miękkie w dotyku, słodko-cierpkie. Dojrzałe opadają same lub zrywają się bez oporu."
+    }
   },
   {
     "name": "Aronia",
@@ -432,7 +527,12 @@
     "instructions": [
       "Usuń najstarsze pędy.",
       "Zostaw młode przyrosty."
-    ]
+    ],
+    "harvest": {
+      "start": "08-20",
+      "end": "09-30",
+      "appearance": "Czarne, matowe jagody w gronach, pokryte delikatnym woskowym nalotem. Twarde, z mocno ściągającym smakiem. Zbieramy całe grona. Idealne do przetworów, soków i nalewek."
+    }
   },
   {
     "name": "Klon kulisty",
