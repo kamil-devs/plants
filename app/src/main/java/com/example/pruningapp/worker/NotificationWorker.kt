@@ -8,6 +8,9 @@ import androidx.work.WorkerParameters
 import com.example.pruningapp.App
 import com.example.pruningapp.R
 import com.example.pruningapp.data.AppDatabase
+import com.example.pruningapp.data.NotifSettings
+import com.example.pruningapp.data.NotificationPreferences
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -17,6 +20,11 @@ class NotificationWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        val settings = NotificationPreferences(applicationContext).settings.first()
+
+        // Brak włączonych typów — nic nie rób
+        if (!settings.hasAnyEnabled()) return Result.success()
+
         val db = AppDatabase.getDatabase(applicationContext)
         val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val today = LocalDate.now()
@@ -26,12 +34,12 @@ class NotificationWorker(
         val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong()).format(fmt)
         val weekEnd = today.minusDays((today.dayOfWeek.value - 1).toLong()).plusDays(6).format(fmt)
 
-        sendActiveTodayNotifications(db, todayStr)
-        sendTomorrowNotifications(db, tomorrowStr)
-        sendOverdueNotification(db, todayStr)
-        sendEndingSoonNotifications(db, tomorrowStr, dayAfterStr)
-        if (today.dayOfWeek.value == 1) sendWeeklyWindowsNotification(db, weekStart, weekEnd)
-        sendSmartNotification(db, today, todayStr, weekStart, weekEnd, fmt)
+        if (settings.activeToday) sendActiveTodayNotifications(db, todayStr)
+        if (settings.tomorrow) sendTomorrowNotifications(db, tomorrowStr)
+        if (settings.overdue) sendOverdueNotification(db, todayStr)
+        if (settings.endingSoon) sendEndingSoonNotifications(db, tomorrowStr, dayAfterStr)
+        if (settings.weekly && today.dayOfWeek.value == 1) sendWeeklyWindowsNotification(db, weekStart, weekEnd)
+        if (settings.smart) sendSmartNotification(db, today, todayStr, weekStart, weekEnd, fmt)
 
         return Result.success()
     }
@@ -137,9 +145,7 @@ class NotificationWorker(
             else -> return
         }
 
-        // Szukaj posiadanej rosliny z aktywnym oknem
-        val activeTasks = db.taskDao().getActiveTasksForToday(todayStr)
-        val activePlant = activeTasks
+        val activePlant = db.taskDao().getActiveTasksForToday(todayStr)
             .mapNotNull { db.plantDao().getPlantById(it.plantId) }
             .firstOrNull { it.owned }
 
@@ -153,9 +159,7 @@ class NotificationWorker(
             return
         }
 
-        // Fallback: szukaj rosliny z oknem w tym tygodniu
-        val weekTasks = db.taskDao().getTasksStartingInRange(weekStart, weekEnd)
-        val weekPlant = weekTasks
+        val weekPlant = db.taskDao().getTasksStartingInRange(weekStart, weekEnd)
             .mapNotNull { db.plantDao().getPlantById(it.plantId) }
             .firstOrNull { it.owned }
 
@@ -192,3 +196,6 @@ class NotificationWorker(
         manager.notify(notificationId, notification)
     }
 }
+
+private fun NotifSettings.hasAnyEnabled(): Boolean =
+    activeToday || tomorrow || overdue || endingSoon || weekly || smart
