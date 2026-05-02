@@ -38,7 +38,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addPlant(name: String, type: String) {
         viewModelScope.launch {
-            plantRepository.insertPlant(Plant(name = name, type = type, instructions = "[]", isUserAdded = true))
+            plantRepository.insertPlant(Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true))
         }
     }
 
@@ -60,7 +60,8 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             val updated = plant.copy(
                 name = newName.trim(),
                 type = newType.trim().ifBlank { "ogólna" },
-                instructions = instructionsJson
+                instructions = instructionsJson,
+                owned = if (rules.isNotEmpty()) true else plant.owned
             )
             plantRepository.updatePlant(updated)
             plantRepository.replacePruningRulesAndTasks(plantId, rules)
