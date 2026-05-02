@@ -40,6 +40,7 @@ import com.example.pruningapp.ui.screens.EditPlantScreen
 import com.example.pruningapp.ui.screens.PlantDetailScreen
 import com.example.pruningapp.ui.screens.PlantListScreen
 import com.example.pruningapp.ui.screens.SettingsScreen
+import com.example.pruningapp.ui.screens.StatsScreen
 import com.example.pruningapp.ui.theme.PlantPruningTheme
 
 class MainActivity : ComponentActivity() {
@@ -131,6 +132,8 @@ fun MainApp() {
                 val plantId = backStackEntry.arguments?.getString("plantId")?.toLongOrNull() ?: 0L
                 EditPlantScreen(navController, plantId)
             }
+
+            composable("stats") { StatsScreen(navController) }
 
             composable("add_collection") {
                 AddEditCollectionScreen(navController, collectionId = null)

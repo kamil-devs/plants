@@ -120,8 +120,8 @@ fun SettingsScreen() {
                             WorkManager.getInstance(context).enqueue(request)
                             Toast.makeText(
                                 context,
-                                "Powiadomienie testowe zostanie wysłane za chwilę…",
-                                Toast.LENGTH_SHORT
+                                "Sprawdzanie: aktywne okna, zaległe, kończące się, tygodniowe i wskazówki sezonowe",
+                                Toast.LENGTH_LONG
                             ).show()
                         },
                         modifier = Modifier.fillMaxWidth()

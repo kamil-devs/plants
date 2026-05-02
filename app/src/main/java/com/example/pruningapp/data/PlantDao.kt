@@ -47,4 +47,13 @@ interface PlantDao {
 
     @Query("SELECT COUNT(*) FROM plants")
     suspend fun getPlantCount(): Int
+
+    @Query("SELECT COUNT(*) FROM plants")
+    fun getTotalPlantCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM plants WHERE owned = 1")
+    fun getOwnedPlantCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM plants WHERE isUserAdded = 1")
+    fun getUserAddedPlantCountFlow(): Flow<Int>
 }
