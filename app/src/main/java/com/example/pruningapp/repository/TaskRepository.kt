@@ -23,4 +23,7 @@ class TaskRepository(private val db: AppDatabase) {
     suspend fun updateTask(task: Task) = db.taskDao().updateTask(task)
 
     fun getAllTasks(): Flow<List<Task>> = db.taskDao().getAllTasks()
+
+    fun getTasksInRange(startDate: String, endDate: String): Flow<List<Task>> =
+        db.taskDao().getTasksInRange(startDate, endDate)
 }

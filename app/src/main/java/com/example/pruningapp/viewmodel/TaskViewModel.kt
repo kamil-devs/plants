@@ -37,4 +37,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
             taskRepository.updateTask(task.copy(status = status))
         }
     }
+
+    fun getTasksInRange(startDate: String, endDate: String): Flow<List<Task>> =
+        taskRepository.getTasksInRange(startDate, endDate)
 }

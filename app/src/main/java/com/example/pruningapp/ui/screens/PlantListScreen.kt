@@ -64,7 +64,6 @@ fun PlantListScreen(
     val plantToDeleteState = remember { mutableStateOf<Plant?>(null) }
     val plantToDelete = plantToDeleteState.value
 
-    // Baza po filtrze "Moje" — z niej wywodzimy dostępne typy
     val basePlants = remember(plants, showUserOnly) {
         if (showUserOnly) plants.filter { it.isUserAdded } else plants
     }
@@ -73,7 +72,6 @@ fun PlantListScreen(
         basePlants.map { it.type }.distinct().sorted()
     }
 
-    // Resetuj typ jeśli zniknął z listy (np. usunięto ostatnią roślinę tej kategorii)
     LaunchedEffect(availableTypes) {
         if (selectedType != null && selectedType !in availableTypes) {
             selectedType = null
@@ -92,18 +90,22 @@ fun PlantListScreen(
             }
     }
 
-    // Dialog potwierdzenia usunięcia
+    // Przypniety na gorze, potem alfabetycznie
+    val sortedPlants = remember(filteredPlants) {
+        filteredPlants.sortedWith(compareByDescending<Plant> { it.pinned }.thenBy { it.name })
+    }
+
     plantToDeleteState.value?.let { plant ->
         AlertDialog(
             onDismissRequest = { plantToDeleteState.value = null },
-            title = { Text("Usuń roślinę") },
-            text = { Text("Czy na pewno chcesz usunąć \"${plant.name}\"? Tej operacji nie można cofnąć.") },
+            title = { Text("Usun rosline") },
+            text = { Text("Czy na pewno chcesz usunac \"${plant.name}\"? Tej operacji nie mozna cofnac.") },
             confirmButton = {
                 TextButton(onClick = {
                     plantViewModel.deletePlant(plant)
                     plantToDeleteState.value = null
                 }) {
-                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    Text("Usun", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -117,7 +119,7 @@ fun PlantListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Moje rośliny") },
+                title = { Text("Moje rosliny") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -125,7 +127,7 @@ fun PlantListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { navController.navigate("add_plant") }) {
-                Icon(Icons.Default.Add, contentDescription = "Dodaj roślinę")
+                Icon(Icons.Default.Add, contentDescription = "Dodaj rosline")
             }
         }
     ) { padding ->
@@ -137,14 +139,14 @@ fun PlantListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Szukaj roślin...") },
+                placeholder = { Text("Szukaj roslin...") },
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null)
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Wyczyść")
+                            Icon(Icons.Default.Close, contentDescription = "Wyczysc")
                         }
                     }
                 },
@@ -191,18 +193,12 @@ fun PlantListScreen(
 
             when {
                 plants.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Brak roślin",
-                                style = MaterialTheme.typography.titleMedium
-                            )
+                            Text("Brak roslin", style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                text = "Dodaj pierwszą roślinę przyciskiem +",
+                                "Dodaj pierwsza rosline przyciskiem +",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -210,16 +206,13 @@ fun PlantListScreen(
                     }
                 }
 
-                filteredPlants.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                sortedPlants.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = when {
-                                searchQuery.isNotBlank() -> "Brak wyników dla: $searchQuery"
-                                showUserOnly -> "Nie masz jeszcze własnych roślin"
-                                else -> "Brak roślin w tej kategorii"
+                                searchQuery.isNotBlank() -> "Brak wynikow dla: $searchQuery"
+                                showUserOnly -> "Nie masz jeszcze wlasnych roslin"
+                                else -> "Brak roslin w tej kategorii"
                             },
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -235,11 +228,12 @@ fun PlantListScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp)
                     ) {
-                        items(filteredPlants, key = { it.id }) { plant ->
+                        items(sortedPlants, key = { it.id }) { plant ->
                             PlantCard(
                                 plant = plant,
                                 onClick = { navController.navigate("plant_detail/${plant.id}") },
                                 onToggleOwned = { plantViewModel.toggleOwned(plant) },
+                                onTogglePinned = { plantViewModel.togglePinned(plant) },
                                 onDelete = if (plant.isUserAdded) {
                                     { plantToDeleteState.value = plant }
                                 } else null

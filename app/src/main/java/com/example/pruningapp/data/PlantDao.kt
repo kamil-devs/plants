@@ -30,6 +30,9 @@ interface PlantDao {
     @Query("UPDATE plants SET owned = :owned WHERE id = :id")
     suspend fun setOwned(id: Long, owned: Boolean)
 
+    @Query("UPDATE plants SET pinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
+
     @Query("DELETE FROM pruning_rules WHERE plantId = :plantId")
     suspend fun deletePruningRulesForPlant(plantId: Long)
 

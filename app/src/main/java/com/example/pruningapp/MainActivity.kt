@@ -10,18 +10,36 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.*
-import com.example.pruningapp.ui.screens.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.pruningapp.ui.screens.AddEditCollectionScreen
+import com.example.pruningapp.ui.screens.AddPlantScreen
+import com.example.pruningapp.ui.screens.CalendarScreen
+import com.example.pruningapp.ui.screens.CollectionDetailScreen
+import com.example.pruningapp.ui.screens.CollectionsScreen
+import com.example.pruningapp.ui.screens.DashboardScreen
+import com.example.pruningapp.ui.screens.EditPlantScreen
+import com.example.pruningapp.ui.screens.PlantDetailScreen
+import com.example.pruningapp.ui.screens.PlantListScreen
+import com.example.pruningapp.ui.screens.SettingsScreen
 import com.example.pruningapp.ui.theme.PlantPruningTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,9 +80,10 @@ fun MainApp() {
     val navController = rememberNavController()
 
     val bottomNavItems = listOf(
-        BottomNavItem("dashboard", Icons.Default.Home, "Główna"),
-        BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
+        BottomNavItem("dashboard", Icons.Default.Home, "Glowna"),
+        BottomNavItem("plants", Icons.Default.Eco, "Rosliny"),
         BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
+        BottomNavItem("collections", Icons.Default.Folder, "Kolekcje"),
         BottomNavItem("settings", Icons.Default.Settings, "Ustawienia")
     )
 
@@ -99,17 +118,31 @@ fun MainApp() {
         ) {
             composable("dashboard") { DashboardScreen(navController) }
             composable("plants") { PlantListScreen(navController) }
+            composable("calendar") { CalendarScreen(navController) }
+            composable("collections") { CollectionsScreen(navController) }
+            composable("settings") { SettingsScreen() }
+
             composable("plant_detail/{plantId}") { backStackEntry ->
                 val plantId = backStackEntry.arguments?.getString("plantId")?.toLongOrNull() ?: 0L
                 PlantDetailScreen(navController, plantId)
             }
-            composable("calendar") { CalendarScreen(navController) }
             composable("add_plant") { AddPlantScreen(navController) }
             composable("edit_plant/{plantId}") { backStackEntry ->
                 val plantId = backStackEntry.arguments?.getString("plantId")?.toLongOrNull() ?: 0L
                 EditPlantScreen(navController, plantId)
             }
-            composable("settings") { SettingsScreen() }
+
+            composable("add_collection") {
+                AddEditCollectionScreen(navController, collectionId = null)
+            }
+            composable("edit_collection/{collectionId}") { backStackEntry ->
+                val collectionId = backStackEntry.arguments?.getString("collectionId")?.toLongOrNull() ?: 0L
+                AddEditCollectionScreen(navController, collectionId = collectionId)
+            }
+            composable("collection_detail/{collectionId}") { backStackEntry ->
+                val collectionId = backStackEntry.arguments?.getString("collectionId")?.toLongOrNull() ?: 0L
+                CollectionDetailScreen(navController, collectionId)
+            }
         }
     }
 }

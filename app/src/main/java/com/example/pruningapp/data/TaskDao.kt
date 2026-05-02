@@ -36,4 +36,7 @@ interface TaskDao {
 
     @Query("DELETE FROM tasks WHERE plantId = :plantId")
     suspend fun deleteTasksForPlant(plantId: Long)
+
+    @Query("SELECT * FROM tasks WHERE date <= :endDate AND endDate >= :startDate ORDER BY date ASC")
+    fun getTasksInRange(startDate: String, endDate: String): Flow<List<Task>>
 }

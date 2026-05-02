@@ -36,6 +36,12 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun togglePinned(plant: Plant) {
+        viewModelScope.launch {
+            plantRepository.setPinned(plant.id, !plant.pinned)
+        }
+    }
+
     fun addPlant(name: String, type: String) {
         viewModelScope.launch {
             plantRepository.insertPlant(Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true))

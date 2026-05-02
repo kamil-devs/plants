@@ -12,6 +12,7 @@ data class Plant(
     val instructions: String,
     val owned: Boolean = false,
     val isUserAdded: Boolean = false,
+    val pinned: Boolean = false,
     val harvestStart: String? = null,
     val harvestEnd: String? = null,
     val harvestAppearance: String? = null

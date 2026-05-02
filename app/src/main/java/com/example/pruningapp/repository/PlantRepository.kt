@@ -27,6 +27,8 @@ class PlantRepository(private val db: AppDatabase) {
 
     suspend fun setOwned(id: Long, owned: Boolean) = db.plantDao().setOwned(id, owned)
 
+    suspend fun setPinned(id: Long, pinned: Boolean) = db.plantDao().setPinned(id, pinned)
+
     suspend fun getPruningRules(plantId: Long): List<PruningRule> =
         db.plantDao().getPruningRulesForPlant(plantId)
 
