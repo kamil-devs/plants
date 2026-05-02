@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +41,12 @@ import androidx.navigation.NavController
 import com.example.pruningapp.ui.components.PlantCard
 import com.example.pruningapp.viewmodel.PlantViewModel
 
+private val typeLabels = mapOf(
+    "owocowa" to "Owocowe",
+    "ozdobna" to "Ozdobne",
+    "ozdobne drzewo" to "Ozdobne drzewa"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlantListScreen(
@@ -47,13 +55,20 @@ fun PlantListScreen(
 ) {
     val plants by plantViewModel.allPlants.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf<String?>(null) }
 
-    val filteredPlants = remember(plants, searchQuery) {
-        if (searchQuery.isBlank()) plants
-        else plants.filter {
-            it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.type.contains(searchQuery, ignoreCase = true)
-        }
+    val availableTypes = remember(plants) { plants.map { it.type }.distinct().sorted() }
+
+    val filteredPlants = remember(plants, searchQuery, selectedType) {
+        plants
+            .let { list -> if (selectedType != null) list.filter { it.type == selectedType } else list }
+            .let { list ->
+                if (searchQuery.isBlank()) list
+                else list.filter {
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.type.contains(searchQuery, ignoreCase = true)
+                }
+            }
     }
 
     Scaffold(
@@ -97,6 +112,27 @@ fun PlantListScreen(
                 shape = MaterialTheme.shapes.large
             )
 
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedType == null,
+                        onClick = { selectedType = null },
+                        label = { Text("Wszystkie") }
+                    )
+                }
+                items(availableTypes) { type ->
+                    FilterChip(
+                        selected = selectedType == type,
+                        onClick = { selectedType = if (selectedType == type) null else type },
+                        label = { Text(typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }) }
+                    )
+                }
+            }
+
             when {
                 plants.isEmpty() -> {
                     Box(
@@ -124,7 +160,8 @@ fun PlantListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Brak wyników dla: $searchQuery",
+                            text = if (searchQuery.isNotBlank()) "Brak wyników dla: $searchQuery"
+                                   else "Brak roślin w tej kategorii",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
