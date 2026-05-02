@@ -41,4 +41,23 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             plantRepository.deletePlant(plant)
         }
     }
+
+    fun saveEditedPlantById(
+        plantId: Long,
+        newName: String,
+        newType: String,
+        instructionsJson: String,
+        rules: List<Triple<String, String, String>>
+    ) {
+        viewModelScope.launch {
+            val plant = plantRepository.getPlantById(plantId) ?: return@launch
+            val updated = plant.copy(
+                name = newName.trim(),
+                type = newType.trim().ifBlank { "ogólna" },
+                instructions = instructionsJson
+            )
+            plantRepository.updatePlant(updated)
+            plantRepository.replacePruningRulesAndTasks(plantId, rules)
+        }
+    }
 }

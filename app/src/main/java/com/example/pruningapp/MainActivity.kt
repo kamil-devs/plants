@@ -105,6 +105,10 @@ fun MainApp() {
             }
             composable("calendar") { CalendarScreen(navController) }
             composable("add_plant") { AddPlantScreen(navController) }
+            composable("edit_plant/{plantId}") { backStackEntry ->
+                val plantId = backStackEntry.arguments?.getString("plantId")?.toLongOrNull() ?: 0L
+                EditPlantScreen(navController, plantId)
+            }
             composable("settings") { SettingsScreen() }
         }
     }

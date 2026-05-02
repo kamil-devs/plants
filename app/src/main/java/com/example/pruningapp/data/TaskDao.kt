@@ -33,4 +33,7 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM tasks WHERE plantId = :plantId AND date = :date AND type = :type")
     suspend fun countTaskForPlantAndDate(plantId: Long, date: String, type: String): Int
+
+    @Query("DELETE FROM tasks WHERE plantId = :plantId")
+    suspend fun deleteTasksForPlant(plantId: Long)
 }

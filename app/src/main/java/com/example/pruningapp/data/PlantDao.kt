@@ -18,8 +18,14 @@ interface PlantDao {
     @Delete
     suspend fun deletePlant(plant: Plant)
 
+    @Update
+    suspend fun updatePlant(plant: Plant)
+
     @Query("UPDATE plants SET owned = :owned WHERE id = :id")
     suspend fun setOwned(id: Long, owned: Boolean)
+
+    @Query("DELETE FROM pruning_rules WHERE plantId = :plantId")
+    suspend fun deletePruningRulesForPlant(plantId: Long)
 
     @Query("SELECT * FROM pruning_rules WHERE plantId = :plantId")
     suspend fun getPruningRulesForPlant(plantId: Long): List<PruningRule>

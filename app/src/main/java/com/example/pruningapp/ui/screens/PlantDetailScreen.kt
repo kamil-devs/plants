@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +56,13 @@ fun PlantDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
+                    }
+                },
+                actions = {
+                    if (plant?.isUserAdded == true) {
+                        IconButton(onClick = { navController.navigate("edit_plant/$plantId") }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edytuj")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

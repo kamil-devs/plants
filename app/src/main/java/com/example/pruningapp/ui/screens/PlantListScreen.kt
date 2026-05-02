@@ -61,7 +61,8 @@ fun PlantListScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showUserOnly by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf<String?>(null) }
-    var plantToDelete by remember { mutableStateOf<Plant?>(null) }
+    val plantToDeleteState = remember { mutableStateOf<Plant?>(null) }
+    val plantToDelete = plantToDeleteState.value
 
     // Baza po filtrze "Moje" — z niej wywodzimy dostępne typy
     val basePlants = remember(plants, showUserOnly) {
@@ -92,21 +93,21 @@ fun PlantListScreen(
     }
 
     // Dialog potwierdzenia usunięcia
-    plantToDelete?.let { plant ->
+    plantToDeleteState.value?.let { plant ->
         AlertDialog(
-            onDismissRequest = { plantToDelete = null },
+            onDismissRequest = { plantToDeleteState.value = null },
             title = { Text("Usuń roślinę") },
             text = { Text("Czy na pewno chcesz usunąć \"${plant.name}\"? Tej operacji nie można cofnąć.") },
             confirmButton = {
                 TextButton(onClick = {
                     plantViewModel.deletePlant(plant)
-                    plantToDelete = null
+                    plantToDeleteState.value = null
                 }) {
                     Text("Usuń", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { plantToDelete = null }) {
+                TextButton(onClick = { plantToDeleteState.value = null }) {
                     Text("Anuluj")
                 }
             }
@@ -240,7 +241,7 @@ fun PlantListScreen(
                                 onClick = { navController.navigate("plant_detail/${plant.id}") },
                                 onToggleOwned = { plantViewModel.toggleOwned(plant) },
                                 onDelete = if (plant.isUserAdded) {
-                                    { plantToDelete = plant }
+                                    { plantToDeleteState.value = plant }
                                 } else null
                             )
                         }
