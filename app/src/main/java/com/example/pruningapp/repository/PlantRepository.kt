@@ -14,6 +14,11 @@ class PlantRepository(private val db: AppDatabase) {
 
     suspend fun getPlantById(id: Long): Plant? = db.plantDao().getPlantById(id)
 
+    fun getPlantByIdFlow(id: Long): Flow<Plant?> = db.plantDao().getPlantByIdFlow(id)
+
+    fun getPruningRulesFlow(plantId: Long): Flow<List<PruningRule>> =
+        db.plantDao().getPruningRulesForPlantFlow(plantId)
+
     suspend fun insertPlant(plant: Plant): Long = db.plantDao().insertPlant(plant)
 
     suspend fun deletePlant(plant: Plant) = db.plantDao().deletePlant(plant)

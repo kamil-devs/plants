@@ -12,6 +12,12 @@ interface PlantDao {
     @Query("SELECT * FROM plants WHERE id = :id")
     suspend fun getPlantById(id: Long): Plant?
 
+    @Query("SELECT * FROM plants WHERE id = :id")
+    fun getPlantByIdFlow(id: Long): Flow<Plant?>
+
+    @Query("SELECT * FROM pruning_rules WHERE plantId = :plantId")
+    fun getPruningRulesForPlantFlow(plantId: Long): Flow<List<PruningRule>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlant(plant: Plant): Long
 

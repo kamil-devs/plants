@@ -7,6 +7,7 @@ import com.example.pruningapp.App
 import com.example.pruningapp.data.Plant
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.repository.PlantRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -21,8 +22,13 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun getPlantById(id: Long): Plant? = plantRepository.getPlantById(id)
 
+    fun getPlantByIdFlow(id: Long): Flow<Plant?> = plantRepository.getPlantByIdFlow(id)
+
     suspend fun getPruningRules(plantId: Long): List<PruningRule> =
         plantRepository.getPruningRules(plantId)
+
+    fun getPruningRulesFlow(plantId: Long): Flow<List<PruningRule>> =
+        plantRepository.getPruningRulesFlow(plantId)
 
     fun toggleOwned(plant: Plant) {
         viewModelScope.launch {

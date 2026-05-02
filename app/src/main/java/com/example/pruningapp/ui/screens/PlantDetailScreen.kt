@@ -14,8 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pruningapp.data.Plant
-import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -41,13 +39,9 @@ fun PlantDetailScreen(
     plantId: Long,
     viewModel: PlantViewModel = viewModel()
 ) {
-    var plant by remember { mutableStateOf<Plant?>(null) }
-    var pruningRules by remember { mutableStateOf<List<PruningRule>>(emptyList()) }
-
-    LaunchedEffect(plantId) {
-        plant = viewModel.getPlantById(plantId)
-        pruningRules = viewModel.getPruningRules(plantId)
-    }
+    // Reaktywne — automatycznie odświeżają się gdy DB się zmienia (np. po edycji)
+    val plant by remember(plantId) { viewModel.getPlantByIdFlow(plantId) }.collectAsState(initial = null)
+    val pruningRules by remember(plantId) { viewModel.getPruningRulesFlow(plantId) }.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {

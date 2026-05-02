@@ -22,7 +22,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     val today: String = LocalDate.now().format(formatter)
 
     // Aktywne + przyszłe okna (endDate >= dziś)
-    val upcomingTasks: StateFlow<List<Task>> = taskRepository.getUpcomingTasks(today, 20)
+    val upcomingTasks: StateFlow<List<Task>> = taskRepository.getUpcomingTasks(today)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTasks: StateFlow<List<Task>> = taskRepository.getAllTasks()
