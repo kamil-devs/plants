@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -25,9 +26,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.pruningapp.data.Plant
 import com.example.pruningapp.ui.components.PlantCard
 import com.example.pruningapp.viewmodel.PlantViewModel
 
@@ -55,12 +59,28 @@ fun PlantListScreen(
 ) {
     val plants by plantViewModel.allPlants.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var showUserOnly by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf<String?>(null) }
+    var plantToDelete by remember { mutableStateOf<Plant?>(null) }
 
-    val availableTypes = remember(plants) { plants.map { it.type }.distinct().sorted() }
+    // Baza po filtrze "Moje" — z niej wywodzimy dostępne typy
+    val basePlants = remember(plants, showUserOnly) {
+        if (showUserOnly) plants.filter { it.isUserAdded } else plants
+    }
 
-    val filteredPlants = remember(plants, searchQuery, selectedType) {
-        plants
+    val availableTypes = remember(basePlants) {
+        basePlants.map { it.type }.distinct().sorted()
+    }
+
+    // Resetuj typ jeśli zniknął z listy (np. usunięto ostatnią roślinę tej kategorii)
+    LaunchedEffect(availableTypes) {
+        if (selectedType != null && selectedType !in availableTypes) {
+            selectedType = null
+        }
+    }
+
+    val filteredPlants = remember(basePlants, searchQuery, selectedType) {
+        basePlants
             .let { list -> if (selectedType != null) list.filter { it.type == selectedType } else list }
             .let { list ->
                 if (searchQuery.isBlank()) list
@@ -69,6 +89,28 @@ fun PlantListScreen(
                             it.type.contains(searchQuery, ignoreCase = true)
                 }
             }
+    }
+
+    // Dialog potwierdzenia usunięcia
+    plantToDelete?.let { plant ->
+        AlertDialog(
+            onDismissRequest = { plantToDelete = null },
+            title = { Text("Usuń roślinę") },
+            text = { Text("Czy na pewno chcesz usunąć \"${plant.name}\"? Tej operacji nie można cofnąć.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    plantViewModel.deletePlant(plant)
+                    plantToDelete = null
+                }) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { plantToDelete = null }) {
+                    Text("Anuluj")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -119,9 +161,22 @@ fun PlantListScreen(
             ) {
                 item {
                     FilterChip(
-                        selected = selectedType == null,
-                        onClick = { selectedType = null },
+                        selected = !showUserOnly && selectedType == null,
+                        onClick = {
+                            showUserOnly = false
+                            selectedType = null
+                        },
                         label = { Text("Wszystkie") }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = showUserOnly,
+                        onClick = {
+                            showUserOnly = !showUserOnly
+                            selectedType = null
+                        },
+                        label = { Text("Moje") }
                     )
                 }
                 items(availableTypes) { type ->
@@ -160,8 +215,11 @@ fun PlantListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (searchQuery.isNotBlank()) "Brak wyników dla: $searchQuery"
-                                   else "Brak roślin w tej kategorii",
+                            text = when {
+                                searchQuery.isNotBlank() -> "Brak wyników dla: $searchQuery"
+                                showUserOnly -> "Nie masz jeszcze własnych roślin"
+                                else -> "Brak roślin w tej kategorii"
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -180,7 +238,10 @@ fun PlantListScreen(
                             PlantCard(
                                 plant = plant,
                                 onClick = { navController.navigate("plant_detail/${plant.id}") },
-                                onToggleOwned = { plantViewModel.toggleOwned(plant) }
+                                onToggleOwned = { plantViewModel.toggleOwned(plant) },
+                                onDelete = if (plant.isUserAdded) {
+                                    { plantToDelete = plant }
+                                } else null
                             )
                         }
                     }

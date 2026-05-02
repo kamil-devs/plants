@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,7 +19,8 @@ import com.example.pruningapp.data.Plant
 fun PlantCard(
     plant: Plant,
     onClick: () -> Unit,
-    onToggleOwned: () -> Unit
+    onToggleOwned: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     Card(
         onClick = onClick,
@@ -57,6 +59,17 @@ fun PlantCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Usuń roślinę",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
 
             IconButton(onClick = onToggleOwned) {
