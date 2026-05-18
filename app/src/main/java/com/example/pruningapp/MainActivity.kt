@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -91,7 +90,6 @@ fun MainApp() {
         BottomNavItem("dashboard", Icons.Default.Home, "Pulpit"),
         BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
         BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
-        BottomNavItem("collections", Icons.Default.Folder, "Kolekcje"),
         BottomNavItem("encyclopedia", Icons.AutoMirrored.Filled.MenuBook, "Poradnik")
     )
 
