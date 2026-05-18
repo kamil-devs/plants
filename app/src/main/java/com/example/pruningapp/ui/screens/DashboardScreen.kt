@@ -117,12 +117,13 @@ fun DashboardScreen(
                 }
             }
 
-            if (weather != null) {
+            val currentWeather = weather
+            if (currentWeather != null) {
                 item {
-                    if (weather.hasWarning) {
-                        WeatherWarningCard(weather)
+                    if (currentWeather.hasWarning) {
+                        WeatherWarningCard(currentWeather)
                     } else {
-                        WeatherInfoCard(weather)
+                        WeatherInfoCard(currentWeather)
                     }
                 }
             }
