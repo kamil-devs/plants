@@ -3,6 +3,7 @@ package com.example.pruningapp.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -31,16 +33,21 @@ fun DashboardScreen(
     val upcomingTasks by taskViewModel.upcomingTasks.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
     val today = LocalDate.now()
-    val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale("pl"))
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("pl"))
 
-    // Tylko rośliny oznaczone jako posiadane
-    val ownedIds = remember(plants) { plants.filter { it.owned }.map { it.id }.toSet() }
+    val ownedPlants = remember(plants) { plants.filter { it.owned } }
+    val ownedIds = remember(ownedPlants) { ownedPlants.map { it.id }.toSet() }
     val visibleTasks = upcomingTasks.filter { it.plantId in ownedIds }
+    val activeTasksCount = visibleTasks.count { task ->
+        val start = runCatching { LocalDate.parse(task.date) }.getOrNull()
+        val end = runCatching { LocalDate.parse(task.endDate) }.getOrNull()
+        task.status != "done" && start != null && end != null && !today.isBefore(start) && !today.isAfter(end)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Pulpit") },
+                title = { Text("Pulpit", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { navController.navigate("stats") }) {
                         Icon(Icons.Default.BarChart, contentDescription = "Statystyki")
@@ -48,46 +55,82 @@ fun DashboardScreen(
                     IconButton(onClick = { navController.navigate("settings") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Ustawienia")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                }
             )
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Hero Section
             item {
-                Spacer(Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = today.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Witaj w ogrodzie!",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    
+                    // Stats Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        StatCard(
+                            label = "Twoje rośliny",
+                            value = ownedPlants.size.toString(),
+                            modifier = Modifier.weight(1f),
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                        StatCard(
+                            label = "Zadania dziś",
+                            value = activeTasksCount.toString(),
+                            modifier = Modifier.weight(1f),
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    }
+                }
+            }
+
+            item {
                 Text(
-                    text = today.format(dateFormatter),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Nadchodzące cięcia",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Okna cięcia",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
             }
 
             if (ownedIds.isEmpty()) {
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Zaznacz rośliny jako posiadane w zakładce Rośliny",
-                                style = MaterialTheme.typography.bodyLarge,
+                                "Dodaj posiadane rośliny, aby zobaczyć harmonogram",
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -95,14 +138,16 @@ fun DashboardScreen(
                 }
             } else if (visibleTasks.isEmpty()) {
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                    ) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Brak aktywnych okien cięcia",
-                                style = MaterialTheme.typography.bodyLarge,
+                                "Wszystkie rośliny zadbane! Brak zadań.",
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -111,18 +156,40 @@ fun DashboardScreen(
             } else {
                 items(visibleTasks, key = { it.id }) { task ->
                     val plant = plants.firstOrNull { it.id == task.plantId }
-                    TaskCard(
-                        task = task,
-                        plantName = plant?.name ?: "Nieznana",
-                        onCheckedChange = { done ->
-                            taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
-                        },
-                        onClick = { plant?.let { navController.navigate("plant_detail/${it.id}") } }
-                    )
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        TaskCard(
+                            task = task,
+                            plantName = plant?.name ?: "Nieznana",
+                            onCheckedChange = { done ->
+                                taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
+                            },
+                            onClick = { plant?.let { navController.navigate("plant_detail/${it.id}") } }
+                        )
+                    }
                 }
             }
+        }
+    }
+}
 
-            item { Spacer(Modifier.height(16.dp)) }
+@Composable
+private fun StatCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    containerColor: androidx.compose.ui.graphics.Color
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

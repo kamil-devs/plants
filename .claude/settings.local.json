@@ -4,7 +4,11 @@
       "Bash(ls \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\\\\plant-pruning-app\\\\app\\\\src\\\\main\\\\java\\\\com\\\\example\\\\pruningapp\\\\data\\\\\\\\\")",
       "Bash(dir \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\\\\plant-pruning-app\\\\app\\\\src\\\\main\\\\java\\\\com\\\\example\\\\pruningapp\\\\data\")",
       "Bash(node -e \"const fs = require\\('fs'\\); try { const data = JSON.parse\\(fs.readFileSync\\('app/src/main/assets/plants.json', 'utf8'\\)\\); console.log\\('Valid JSON. Plant count:', data.length\\); data.forEach\\(p => console.log\\(p.name\\)\\); } catch\\(e\\) { console.error\\('JSON ERROR:', e.message\\); }\")",
-      "Bash(node -e \"const fs = require\\('fs'\\); const data = JSON.parse\\(fs.readFileSync\\('app/src/main/assets/plants.json', 'utf8'\\)\\); console.log\\('Plants:', data.length\\); data.forEach\\(p => { const instCount = p.instructions.length; console.log\\(p.name + ' \\(' + p.type + '\\): ' + instCount + ' instructions'\\); }\\);\")"
+      "Bash(node -e \"const fs = require\\('fs'\\); const data = JSON.parse\\(fs.readFileSync\\('app/src/main/assets/plants.json', 'utf8'\\)\\); console.log\\('Plants:', data.length\\); data.forEach\\(p => { const instCount = p.instructions.length; console.log\\(p.name + ' \\(' + p.type + '\\): ' + instCount + ' instructions'\\); }\\);\")",
+      "Bash(./gradlew compileDebugKotlin)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
