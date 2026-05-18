@@ -9,10 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,7 +42,8 @@ fun MagazineCard(
     imageUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardHeight: androidx.compose.ui.unit.Dp = 200.dp
+    cardHeight: androidx.compose.ui.unit.Dp = 200.dp,
+    syncPending: Boolean = false
 ) {
     val cardShape = RoundedCornerShape(24.dp)
 
@@ -85,6 +91,25 @@ fun MagazineCard(
                         )
                     )
             )
+
+            if (syncPending) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(26.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xCC000000)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Sync,
+                        contentDescription = "Oczekuje na synchronizacje",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
 
             // Glassmorphism text overlay
             Box(

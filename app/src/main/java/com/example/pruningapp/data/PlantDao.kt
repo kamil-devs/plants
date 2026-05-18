@@ -57,6 +57,9 @@ interface PlantDao {
     @Query("SELECT COUNT(*) FROM plants WHERE isUserAdded = 1")
     fun getUserAddedPlantCountFlow(): Flow<Int>
 
+    @Query("SELECT * FROM plants WHERE owned = 1 AND apiDataSynced = 0")
+    suspend fun getUnsyncedOwnedPlants(): List<Plant>
+
     @Query("UPDATE plants SET perenualId = :perenualId WHERE id = :id")
     suspend fun setPerenualId(id: Long, perenualId: Int)
 

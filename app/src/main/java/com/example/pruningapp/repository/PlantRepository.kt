@@ -85,7 +85,7 @@ class PlantRepository(
 
     /**
      * Pobiera dane pielęgnacyjne z Perenual i zapisuje je trwale w wierszu Plant.
-     * Rzuca HttpException(429) oraz UnknownHostException — PerenualSyncWorker
+     * Rzuca HttpException(429) oraz UnknownHostException — GlobalSyncWorker
      * przechwytuje je i planuje automatyczne ponowienie.
      */
     suspend fun syncPlantFromApi(plantId: Long) {

@@ -3,14 +3,11 @@ package com.example.pruningapp.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.WorkManager
 import com.example.pruningapp.App
 import com.example.pruningapp.data.Plant
-import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.repository.PlantRepository
-import com.example.pruningapp.worker.PerenualSyncWorker
+import com.example.pruningapp.worker.GlobalSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,14 +33,9 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleOwned(plant: Plant) {
         viewModelScope.launch {
-            val nowOwned = !plant.owned
-            plantRepository.setOwned(plant.id, nowOwned)
-            if (nowOwned && !plant.apiDataSynced) {
-                val hasPerenualMapping = plant.perenualId != null
-                    || PlantDatabase.plants.any { it.polishName == plant.name }
-                if (hasPerenualMapping) {
-                    enqueuePerenualSync(plant.id)
-                }
+            plantRepository.setOwned(plant.id, !plant.owned)
+            if (!plant.owned) {
+                GlobalSyncWorker.enqueue(getApplication())
             }
         }
     }
@@ -88,12 +80,4 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun enqueuePerenualSync(plantId: Long) {
-        WorkManager.getInstance(getApplication())
-            .enqueueUniqueWork(
-                "perenual_sync_$plantId",
-                ExistingWorkPolicy.KEEP,
-                PerenualSyncWorker.buildRequest(plantId)
-            )
-    }
 }

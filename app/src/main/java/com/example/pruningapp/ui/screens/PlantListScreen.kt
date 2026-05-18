@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.Plant
+import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.ui.components.MagazineCard
 import com.example.pruningapp.viewmodel.PlantViewModel
 
@@ -55,6 +56,10 @@ private val typeLabels = mapOf(
 )
 
 private fun Plant.categoryLabel(): String = typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
+
+private fun Plant.hasPendingSync(): Boolean =
+    owned && !apiDataSynced &&
+        (perenualId != null || PlantDatabase.plants.any { it.polishName == name })
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -245,7 +250,8 @@ fun PlantListScreen(
                                 subtitle = plant.categoryLabel(),
                                 category = plant.categoryLabel(),
                                 imageUrl = null,
-                                onClick = { navController.navigate("plant_detail/${plant.id}") }
+                                onClick = { navController.navigate("plant_detail/${plant.id}") },
+                                syncPending = plant.hasPendingSync()
                             )
                         }
                     }

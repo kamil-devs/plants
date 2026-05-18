@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.JsonImporter
+import com.example.pruningapp.worker.GlobalSyncWorker
 import com.example.pruningapp.worker.NotificationWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class App : Application() {
                 JsonImporter(this@App, database).import()
             }
         }
+        GlobalSyncWorker.enqueue(this)
     }
 
     private fun createNotificationChannels() {
