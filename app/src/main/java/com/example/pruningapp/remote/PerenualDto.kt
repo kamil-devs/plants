@@ -1,6 +1,10 @@
 package com.example.pruningapp.remote
 
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
+import java.lang.reflect.Type
 
 data class SpeciesDetails(
     @SerializedName("id") val id: Int,
@@ -27,3 +31,14 @@ data class PruningCount(
     @SerializedName("amount") val amount: Int?,
     @SerializedName("interval") val interval: String?
 )
+
+class PruningCountDeserializer : JsonDeserializer<PruningCount?> {
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): PruningCount? {
+        if (!json.isJsonObject) return null
+        val obj = json.asJsonObject
+        return PruningCount(
+            amount = obj.get("amount")?.takeIf { !it.isJsonNull }?.asInt,
+            interval = obj.get("interval")?.takeIf { !it.isJsonNull }?.asString
+        )
+    }
+}
