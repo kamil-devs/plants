@@ -74,7 +74,7 @@ fun PlantListScreen(
     val plantToDeleteState = remember { mutableStateOf<Plant?>(null) }
 
     val basePlants = remember(plants, showUserOnly) {
-        if (showUserOnly) plants.filter { it.isUserAdded } else plants
+        if (showUserOnly) plants.filter { it.owned } else plants
     }
 
     val availableTypes = remember(basePlants) {
@@ -225,7 +225,7 @@ fun PlantListScreen(
                         Text(
                             text = when {
                                 searchQuery.isNotBlank() -> "Brak wynikow dla: $searchQuery"
-                                showUserOnly -> "Nie masz jeszcze wlasnych roslin"
+                                showUserOnly -> "Nie masz jeszcze posiadanych roslin"
                                 else -> "Brak roslin w tej kategorii"
                             },
                             style = MaterialTheme.typography.bodyLarge,
