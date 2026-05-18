@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -119,7 +120,12 @@ fun PlantListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Moje rosliny") },
+                title = { Text("Moje rośliny") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("collections") }) {
+                        Icon(Icons.Default.Folder, contentDescription = "Kolekcje")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )

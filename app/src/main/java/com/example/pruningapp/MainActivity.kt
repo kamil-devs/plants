@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -39,6 +40,8 @@ import com.example.pruningapp.ui.screens.DashboardScreen
 import com.example.pruningapp.ui.screens.EditPlantScreen
 import com.example.pruningapp.ui.screens.PlantDetailScreen
 import com.example.pruningapp.ui.screens.PlantListScreen
+import com.example.pruningapp.ui.screens.PerenualPlantDetailScreen
+import com.example.pruningapp.ui.screens.PerenualPlantsScreen
 import com.example.pruningapp.ui.screens.SettingsScreen
 import com.example.pruningapp.ui.screens.StatsScreen
 import com.example.pruningapp.ui.theme.PlantPruningTheme
@@ -81,11 +84,10 @@ fun MainApp() {
     val navController = rememberNavController()
 
     val bottomNavItems = listOf(
-        BottomNavItem("dashboard", Icons.Default.Home, "Glowna"),
-        BottomNavItem("plants", Icons.Default.Eco, "Rosliny"),
+        BottomNavItem("dashboard", Icons.Default.Home, "Pulpit"),
+        BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
         BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
-        BottomNavItem("collections", Icons.Default.Folder, "Kolekcje"),
-        BottomNavItem("settings", Icons.Default.Settings, "Ustawienia")
+        BottomNavItem("encyclopedia", Icons.Default.MenuBook, "Poradnik")
     )
 
     Scaffold(
@@ -134,6 +136,12 @@ fun MainApp() {
             }
 
             composable("stats") { StatsScreen(navController) }
+
+            composable("encyclopedia") { PerenualPlantsScreen(navController) }
+            composable("encyclopedia/{id}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
+                PerenualPlantDetailScreen(navController, id)
+            }
 
             composable("add_collection") {
                 AddEditCollectionScreen(navController, collectionId = null)
