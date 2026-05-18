@@ -220,7 +220,7 @@ private fun MonthlyView(
                 Icon(Icons.Default.ChevronLeft, "Poprzedni miesiac")
             }
             Text(
-                text = "${displayedMonth.month.getDisplayName(TextStyle.FULL, Locale("pl")).replaceFirstChar { it.uppercase() }} ${displayedMonth.year}",
+                text = "${displayedMonth.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale("pl")).replaceFirstChar { it.uppercase() }} ${displayedMonth.year}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -300,14 +300,14 @@ private fun WeeklyView(
     navController: NavController
 ) {
     val weekEnd = currentWeekStart.plusDays(6)
-    val weekFmt = DateTimeFormatter.ofPattern("d MMM", Locale("pl"))
-    val weekFmtYear = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("pl"))
+    val weekFmt = DateTimeFormatter.ofPattern("d LLL", Locale("pl"))
+    val weekFmtYear = DateTimeFormatter.ofPattern("d LLL yyyy", Locale("pl"))
     val weekLabel = if (currentWeekStart.year == weekEnd.year) {
         "${currentWeekStart.format(weekFmt)} - ${weekEnd.format(weekFmt)} ${weekEnd.year}"
     } else {
         "${currentWeekStart.format(weekFmtYear)} - ${weekEnd.format(weekFmtYear)}"
     }
-    val dayHeaderFmt = DateTimeFormatter.ofPattern("d MMM", Locale("pl"))
+    val dayHeaderFmt = DateTimeFormatter.ofPattern("d LLL", Locale("pl"))
     val today = LocalDate.now()
 
     Column(modifier = Modifier.fillMaxSize()) {
