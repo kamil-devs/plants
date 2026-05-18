@@ -8,6 +8,7 @@ import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.data.Task
 import com.example.pruningapp.remote.PerenualApiService
+import com.example.pruningapp.remote.WikipediaApiService
 import com.example.pruningapp.util.PlantDescriptionTranslator
 import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
@@ -47,6 +48,19 @@ class PlantRepository(
     suspend fun getAllPruningRules(): List<PruningRule> = db.plantDao().getAllPruningRules()
 
     suspend fun getPlantCount(): Int = db.plantDao().getPlantCount()
+
+    suspend fun syncWikipediaImage(plantId: Long) {
+        val plant = db.plantDao().getPlantById(plantId) ?: return
+        if (!plant.wikiImageUrl.isNullOrBlank()) return
+        val latinName = PlantDatabase.plants.find { it.polishName == plant.name }?.latinName ?: return
+        try {
+            val response = WikipediaApiService.instance.getPageImages(titles = latinName)
+            val imageUrl = response.query?.pages?.values
+                ?.firstOrNull { (it.pageId ?: -1) > 0 }
+                ?.thumbnail?.source ?: return
+            db.plantDao().updateWikiImageUrl(plantId, imageUrl)
+        } catch (_: Exception) { }
+    }
 
     suspend fun replacePruningRulesAndTasks(
         plantId: Long,

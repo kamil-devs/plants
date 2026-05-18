@@ -24,5 +24,6 @@ data class Plant(
     val apiMaintenance: String? = null,
     val apiSunlight: String? = null,
     val apiImageUrl: String? = null,
-    val apiDataSynced: Boolean = false
+    val apiDataSynced: Boolean = false,
+    val wikiImageUrl: String? = null
 )

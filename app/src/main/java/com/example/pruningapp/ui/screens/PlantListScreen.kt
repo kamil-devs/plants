@@ -249,7 +249,7 @@ fun PlantListScreen(
                                 title = plant.name,
                                 subtitle = plant.categoryLabel(),
                                 category = plant.categoryLabel(),
-                                imageUrl = plant.apiImageUrl,
+                                imageUrl = plant.wikiImageUrl ?: plant.apiImageUrl,
                                 owned = plant.owned,
                                 pinned = plant.pinned,
                                 syncPending = plant.hasPendingSync(),

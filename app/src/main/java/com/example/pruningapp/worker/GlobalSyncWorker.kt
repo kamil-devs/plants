@@ -33,8 +33,6 @@ class GlobalSyncWorker(
                     PlantDatabase.plants.any { it.polishName == plant.name }
             }
 
-        if (pending.isEmpty()) return Result.success()
-
         for ((index, plant) in pending.withIndex()) {
             try {
                 repo.syncPlantFromApi(plant.id)
@@ -42,13 +40,16 @@ class GlobalSyncWorker(
                 return if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure()
             } catch (e: UnknownHostException) {
                 return if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure()
-            } catch (_: Exception) {
-                // Skip this plant, continue with the rest
-            }
+            } catch (_: Exception) { }
 
-            if (index < pending.lastIndex) {
-                delay(5_000)
-            }
+            if (index < pending.lastIndex) delay(5_000)
+        }
+
+        // Wikipedia images — for all owned plants that still have no image
+        val withoutImage = db.plantDao().getOwnedPlantsWithoutWikiImage()
+        for ((index, plant) in withoutImage.withIndex()) {
+            repo.syncWikipediaImage(plant.id)
+            if (index < withoutImage.lastIndex) delay(1_000)
         }
 
         return Result.success()

@@ -63,6 +63,12 @@ interface PlantDao {
     @Query("UPDATE plants SET perenualId = :perenualId WHERE id = :id")
     suspend fun setPerenualId(id: Long, perenualId: Int)
 
+    @Query("UPDATE plants SET wikiImageUrl = :url WHERE id = :id")
+    suspend fun updateWikiImageUrl(id: Long, url: String)
+
+    @Query("SELECT * FROM plants WHERE owned = 1 AND wikiImageUrl IS NULL")
+    suspend fun getOwnedPlantsWithoutWikiImage(): List<Plant>
+
     @Query("""
         UPDATE plants
         SET apiDescription   = :description,

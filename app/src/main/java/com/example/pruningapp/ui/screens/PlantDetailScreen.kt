@@ -107,9 +107,10 @@ fun PlantDetailScreen(
                             .fillMaxWidth()
                             .height(200.dp)
                     ) {
-                        if (!currentPlant.apiImageUrl.isNullOrBlank()) {
+                        val heroImageUrl = currentPlant.wikiImageUrl ?: currentPlant.apiImageUrl
+                        if (!heroImageUrl.isNullOrBlank()) {
                             AsyncImage(
-                                model = currentPlant.apiImageUrl,
+                                model = heroImageUrl,
                                 contentDescription = currentPlant.name,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
