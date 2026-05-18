@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -14,11 +15,15 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -92,14 +97,29 @@ fun MainApp() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                modifier = Modifier.border(
+                    width = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                )
+            ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 bottomNavItems.forEach { item ->
+                    val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                        selected = selected,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
                         onClick = {
                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {

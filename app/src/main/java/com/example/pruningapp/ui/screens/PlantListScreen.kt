@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -43,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.Plant
-import com.example.pruningapp.ui.components.PlantCard
+import com.example.pruningapp.ui.components.MagazineCard
 import com.example.pruningapp.viewmodel.PlantViewModel
 
 private val typeLabels = mapOf(
@@ -51,6 +53,8 @@ private val typeLabels = mapOf(
     "ozdobna" to "Ozdobne",
     "ozdobne drzewo" to "Ozdobne drzewa"
 )
+
+private fun Plant.categoryLabel(): String = typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +67,6 @@ fun PlantListScreen(
     var showUserOnly by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf<String?>(null) }
     val plantToDeleteState = remember { mutableStateOf<Plant?>(null) }
-    val plantToDelete = plantToDeleteState.value
 
     val basePlants = remember(plants, showUserOnly) {
         if (showUserOnly) plants.filter { it.isUserAdded } else plants
@@ -227,22 +230,22 @@ fun PlantListScreen(
                 }
 
                 else -> {
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                            .padding(horizontal = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp)
                     ) {
-                        items(sortedPlants, key = { it.id }) { plant ->
-                            PlantCard(
-                                plant = plant,
-                                onClick = { navController.navigate("plant_detail/${plant.id}") },
-                                onToggleOwned = { plantViewModel.toggleOwned(plant) },
-                                onTogglePinned = { plantViewModel.togglePinned(plant) },
-                                onDelete = if (plant.isUserAdded) {
-                                    { plantToDeleteState.value = plant }
-                                } else null
+                        gridItems(sortedPlants, key = { it.id }) { plant ->
+                            MagazineCard(
+                                title = plant.name,
+                                subtitle = plant.categoryLabel(),
+                                category = plant.categoryLabel(),
+                                imageUrl = null,
+                                onClick = { navController.navigate("plant_detail/${plant.id}") }
                             )
                         }
                     }

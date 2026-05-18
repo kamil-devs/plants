@@ -1,15 +1,23 @@
 package com.example.pruningapp.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,7 +47,6 @@ fun PlantDetailScreen(
     plantId: Long,
     viewModel: PlantViewModel = viewModel()
 ) {
-    // Reaktywne — automatycznie odświeżają się gdy DB się zmienia (np. po edycji)
     val plant by remember(plantId) { viewModel.getPlantByIdFlow(plantId) }.collectAsState(initial = null)
     val pruningRules by remember(plantId) { viewModel.getPruningRulesFlow(plantId) }.collectAsState(initial = emptyList())
 
@@ -77,27 +84,50 @@ fun PlantDetailScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
+                    .padding(padding),
+                contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Gradient hero header
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(0xFF1B5E20),
+                                        Color(0xFF2D5A27),
+                                        Color(0xFF4CAF50)
+                                    )
+                                )
+                            )
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Eco,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(120.dp)
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 24.dp),
+                            tint = Color.White.copy(alpha = 0.12f)
+                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
+                        ) {
                             Text(
                                 text = currentPlant.name,
                                 style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                             Text(
-                                text = "Typ: ${currentPlant.type}",
+                                text = currentPlant.type.replaceFirstChar { it.uppercase() },
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = Color.White.copy(alpha = 0.78f)
                             )
                         }
                     }
@@ -108,12 +138,19 @@ fun PlantDetailScreen(
                         Text(
                             "Terminy cięcia",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
-                    items(pruningRules.size) { index ->
-                        val rule = pruningRules[index]
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                    items(pruningRules) { rule ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -121,15 +158,27 @@ fun PlantDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.ContentCut,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        rule.type.replaceFirstChar { it.uppercase() },
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
                                 Text(
-                                    rule.type.replaceFirstChar { it.uppercase() },
-                                    fontWeight = FontWeight.SemiBold,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    "${rule.startMonthDay} – ${rule.endMonthDay}",
+                                    "${formatMonthDay(rule.startMonthDay)} – ${formatMonthDay(rule.endMonthDay)}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }
@@ -141,12 +190,15 @@ fun PlantDetailScreen(
                         Text(
                             "Zbiory",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                     item {
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer
                             )
@@ -168,7 +220,8 @@ fun PlantDetailScreen(
                                     Text(
                                         "${formatMonthDay(currentPlant.harvestStart)} – ${formatMonthDay(currentPlant.harvestEnd ?: "")}",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.secondary
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                                 if (!currentPlant.harvestAppearance.isNullOrBlank()) {
@@ -192,46 +245,86 @@ fun PlantDetailScreen(
                 if (instructions.isNotEmpty()) {
                     item {
                         Text(
-                            "Instrukcje",
+                            "Instrukcje cięcia",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
-                    itemsIndexed(instructions) { index, instruction ->
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    "${index + 1}.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    instruction,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            if (index < instructions.size - 1) {
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                                instructions.forEachIndexed { index, instruction ->
+                                    TimelineStep(
+                                        number = index + 1,
+                                        text = instruction,
+                                        isLast = index == instructions.size - 1
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
-                item { Spacer(Modifier.height(16.dp)) }
             }
         } else {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
         }
+    }
+}
+
+@Composable
+private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Timeline track: circle + vertical line
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(28.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$number",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(24.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                )
+            }
+        }
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.87f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = if (isLast) 8.dp else 16.dp)
+        )
     }
 }
