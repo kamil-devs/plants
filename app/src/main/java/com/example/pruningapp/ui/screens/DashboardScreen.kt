@@ -8,6 +8,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +46,6 @@ fun DashboardScreen(
 
     val ownedPlants = remember(plants) { plants.filter { it.owned } }
     val ownedIds = remember(ownedPlants) { ownedPlants.map { it.id }.toSet() }
-    val weatherWarning = weather?.takeIf { it.hasWarning }
     val visibleTasks = upcomingTasks.filter { it.plantId in ownedIds }
     val activeTasksCount = visibleTasks.count { task ->
         val start = runCatching { LocalDate.parse(task.date) }.getOrNull()
@@ -114,9 +117,13 @@ fun DashboardScreen(
                 }
             }
 
-            if (weatherWarning != null) {
+            if (weather != null) {
                 item {
-                    WeatherWarningCard(weatherWarning)
+                    if (weather.hasWarning) {
+                        WeatherWarningCard(weather)
+                    } else {
+                        WeatherInfoCard(weather)
+                    }
                 }
             }
 
@@ -217,6 +224,51 @@ private fun WeatherWarningCard(weather: WeatherData) {
                     text = weather.warningText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherInfoCard(weather: WeatherData) {
+    val icon = when {
+        weather.conditionId in 600..622 -> Icons.Default.AcUnit
+        weather.conditionId in 200..531 -> Icons.Default.Grain
+        weather.conditionId in 801..804 -> Icons.Default.Cloud
+        else                            -> Icons.Default.WbSunny
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = "${weather.temp.toInt()}°C · ${weather.description.replaceFirstChar { it.uppercase() }}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = weather.city,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         }
