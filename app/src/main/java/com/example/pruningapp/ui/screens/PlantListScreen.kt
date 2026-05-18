@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -60,8 +60,6 @@ private val typeLabels = mapOf(
 private fun Plant.categoryLabel(): String =
     typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
 
-// perenualId pochodzi z importu JSON (opartego na encyclopediaSpeciesDao) —
-// nie ma potrzeby odpytywania statycznego PlantDatabase w czasie renderowania.
 private fun Plant.hasPendingSync(): Boolean =
     owned && !apiDataSynced && perenualId != null
 
@@ -71,6 +69,13 @@ private fun Plant.toCardItem(): PlantCardItem = PlantCardItem(
     imageUrl = wikiImageUrl ?: apiImageUrl,
     category = categoryLabel()
 )
+
+// Alternating aspect ratios create natural stagger between columns.
+private fun aspectRatioFor(index: Int): Float = when (index % 3) {
+    0 -> 0.65f
+    1 -> 0.82f
+    else -> 0.72f
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,9 +123,7 @@ fun PlantListScreen(
         AlertDialog(
             onDismissRequest = { plantToDeleteState.value = null },
             title = { Text(stringResource(R.string.dialog_delete_plant_title)) },
-            text = {
-                Text(stringResource(R.string.dialog_delete_plant_message, plant.name))
-            },
+            text = { Text(stringResource(R.string.dialog_delete_plant_message, plant.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     plantViewModel.deletePlant(plant)
@@ -256,18 +259,19 @@ fun PlantListScreen(
                 }
 
                 else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                    LazyVerticalStaggeredGrid(
+                        columns = StaggeredGridCells.Fixed(2),
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalItemSpacing = 12.dp,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp)
+                        contentPadding = PaddingValues(top = 4.dp, bottom = 96.dp)
                     ) {
-                        gridItems(sortedPlants, key = { it.id }) { plant ->
+                        itemsIndexed(sortedPlants, key = { _, plant -> plant.id }) { index, plant ->
                             MagazineCard(
                                 item = plant.toCardItem(),
+                                aspectRatio = aspectRatioFor(index),
                                 owned = plant.owned,
                                 pinned = plant.pinned,
                                 syncPending = plant.hasPendingSync(),

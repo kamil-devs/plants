@@ -102,4 +102,22 @@
     <string name="cd_back">Wróć</string>
     <string name="cd_search">Szukaj</string>
     <string name="cd_info">Informacja</string>
+    <string name="cd_settings">Ustawienia</string>
+    <string name="cd_stats">Statystyki</string>
+
+    <!-- Pulpit — powitania zależne od pory dnia -->
+    <string name="greeting_morning">Dzień dobry!</string>
+    <string name="greeting_afternoon">Dzień dobry!</string>
+    <string name="greeting_evening">Dobry wieczór!</string>
+    <string name="greeting_night">Dobranoc!</string>
+
+    <!-- Pulpit — etykiety -->
+    <string name="dashboard_your_garden">Twój ogród</string>
+    <string name="dashboard_plants_label">rośliny</string>
+    <string name="dashboard_tasks_today">zadań dziś</string>
+    <string name="dashboard_upcoming_pruning">Nadchodzące cięcia</string>
+    <string name="dashboard_all_done">Wszystkie rośliny zadbane!</string>
+    <string name="dashboard_add_plants_hint">Dodaj posiadane rośliny, aby zobaczyć harmonogram</string>
+    <string name="dashboard_active_now">Aktywne teraz</string>
+    <string name="dashboard_from_date">Od %1$s</string>
 </resources>

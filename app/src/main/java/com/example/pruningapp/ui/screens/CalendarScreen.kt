@@ -42,6 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.pruningapp.data.TaskStatus
+import com.example.pruningapp.data.isDone
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import java.time.LocalDate
@@ -80,7 +82,7 @@ fun CalendarScreen(
             val plant = plantMap[task.plantId]
             (!filterMyOnly || plant?.owned == true) &&
             (!filterFruitOnly || plant?.type == "owocowa") &&
-            (!filterActiveOnly || task.status != "done")
+            (!filterActiveOnly || !task.isDone)
         }
     }
 
@@ -276,7 +278,7 @@ private fun MonthlyView(
                         task = task,
                         plantName = plant?.name ?: "Nieznana",
                         onCheckedChange = { done ->
-                            taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
+                            taskViewModel.updateTaskStatus(task, if (done) TaskStatus.DONE else TaskStatus.PENDING)
                         },
                         onClick = {
                             plant?.let { navController.navigate("plant_detail/${it.id}") }
@@ -387,7 +389,7 @@ private fun WeeklyView(
                                 task = task,
                                 plantName = plant?.name ?: "Nieznana",
                                 onCheckedChange = { done ->
-                                    taskViewModel.updateTaskStatus(task, if (done) "done" else "pending")
+                                    taskViewModel.updateTaskStatus(task, if (done) TaskStatus.DONE else TaskStatus.PENDING)
                                 },
                                 onClick = {
                                     plant?.let { navController.navigate("plant_detail/${it.id}") }

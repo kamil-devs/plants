@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pruningapp.App
 import com.example.pruningapp.data.Task
+import com.example.pruningapp.data.TaskStatus
 import com.example.pruningapp.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,9 +33,9 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     fun getTasksForDate(date: String): Flow<List<Task>> =
         taskRepository.getTasksContainingDate(date)
 
-    fun updateTaskStatus(task: Task, status: String) {
+    fun updateTaskStatus(task: Task, status: TaskStatus) {
         viewModelScope.launch {
-            taskRepository.updateTask(task.copy(status = status))
+            taskRepository.updateTask(task.copy(status = status.value))
         }
     }
 

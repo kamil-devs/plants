@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -41,13 +41,13 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.pruningapp.R
 
 // MagazineCard jest niezależny od modeli biznesowych dzięki interfejsowi CardDisplayable.
-// Komponent może być przeniesiony do modułu :core:ui bez żadnych zależności na :data.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MagazineCard(
     item: CardDisplayable,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    aspectRatio: Float = 0.72f,
     owned: Boolean = false,
     pinned: Boolean = false,
     syncPending: Boolean = false,
@@ -60,7 +60,7 @@ fun MagazineCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .aspectRatio(aspectRatio),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
@@ -75,17 +75,20 @@ fun MagazineCard(
                 loading = { CardImagePlaceholder() }
             )
 
+            // Gradient scrim for text legibility
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
-                            startY = 350f
+                            0f to Color.Transparent,
+                            0.45f to Color.Transparent,
+                            1f to Color.Black.copy(alpha = 0.82f)
                         )
                     )
             )
 
+            // Top row: action buttons
             Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -93,24 +96,17 @@ fun MagazineCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (syncPending) {
-                    Surface(
-                        modifier = Modifier.size(32.dp),
-                        shape = CircleShape,
-                        color = Color.Black.copy(alpha = 0.5f),
-                        contentColor = Color.White
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Sync,
-                                contentDescription = stringResource(R.string.cd_sync_pending),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    ActionCircleButton(
+                        icon = Icons.Default.Sync,
+                        contentDescription = stringResource(R.string.cd_sync_pending),
+                        active = false,
+                        activeColor = Color.White
+                    )
                 }
                 if (onTogglePinned != null) {
                     ActionCircleButton(
                         icon = Icons.Default.PushPin,
+                        contentDescription = null,
                         active = pinned,
                         activeColor = Color(0xFFFFC107),
                         onClick = onTogglePinned
@@ -119,6 +115,7 @@ fun MagazineCard(
                 if (onToggleOwned != null) {
                     ActionCircleButton(
                         icon = Icons.Default.Check,
+                        contentDescription = null,
                         active = owned,
                         activeColor = MaterialTheme.colorScheme.primary,
                         onClick = onToggleOwned
@@ -126,22 +123,24 @@ fun MagazineCard(
                 }
             }
 
+            // Category chip — glassmorphism style
             Surface(
                 modifier = Modifier
-                    .padding(12.dp)
+                    .padding(10.dp)
                     .align(Alignment.TopStart),
                 shape = RoundedCornerShape(50),
-                color = Color.Black.copy(alpha = 0.4f),
+                color = Color.Black.copy(alpha = 0.35f),
                 contentColor = Color.White
             ) {
                 Text(
                     text = item.category,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 10.sp
                 )
             }
 
+            // Title / subtitle at bottom
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -152,7 +151,7 @@ fun MagazineCard(
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
@@ -195,13 +194,15 @@ private fun CardImagePlaceholder() {
 @Composable
 private fun ActionCircleButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String?,
     active: Boolean,
     activeColor: Color,
-    onClick: () -> Unit
+    onClick: (() -> Unit)? = null
 ) {
     Surface(
-        onClick = onClick,
+        onClick = onClick ?: {},
         modifier = Modifier.size(32.dp),
+        enabled = onClick != null,
         shape = CircleShape,
         color = if (active) activeColor else Color.Black.copy(alpha = 0.3f),
         contentColor = Color.White
@@ -209,7 +210,7 @@ private fun ActionCircleButton(
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 modifier = Modifier.size(16.dp)
             )
         }

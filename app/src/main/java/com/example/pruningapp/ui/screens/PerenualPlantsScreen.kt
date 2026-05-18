@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
@@ -36,8 +36,12 @@ import com.example.pruningapp.ui.components.MagazineCard
 import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
 
-// Ekran pobiera katalog z encyclopediaSpecies StateFlow — Room jest SSOT,
-// nie ma już żadnej referencji do statycznego PlantDatabase.
+private fun aspectRatioFor(index: Int): Float = when (index % 3) {
+    0 -> 0.68f
+    1 -> 0.80f
+    else -> 0.73f
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerenualPlantsScreen(
@@ -58,16 +62,16 @@ fun PerenualPlantsScreen(
             )
         }
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 96.dp),
+            verticalItemSpacing = 10.dp,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            item(span = { GridItemSpan(2) }) {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -93,7 +97,7 @@ fun PerenualPlantsScreen(
                 }
             }
 
-            items(encyclopediaSpecies) { species ->
+            itemsIndexed(encyclopediaSpecies) { index, species ->
                 val localPlant = plants.find {
                     it.name.equals(species.polishName, ignoreCase = true)
                 }
@@ -107,6 +111,7 @@ fun PerenualPlantsScreen(
 
                 MagazineCard(
                     item = species.toCardItem(imageUrl),
+                    aspectRatio = aspectRatioFor(index),
                     onClick = { navController.navigate("encyclopedia/${species.perenualId}") }
                 )
             }
@@ -114,8 +119,6 @@ fun PerenualPlantsScreen(
     }
 }
 
-// Extension function: tworzy CardDisplayable z encji Room bez importowania komponentu
-// MagazineCard do pakietu data — izolacja warstw zachowana.
 private fun EncyclopediaSpecies.toCardItem(imageUrl: String?): PlantCardItem =
     PlantCardItem(
         title = polishName,
