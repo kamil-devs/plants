@@ -37,7 +37,7 @@ fun PerenualPlantsScreen(navController: NavController) {
             TopAppBar(
                 title = { Text("Poradnik pielęgnacji") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
                 )
             )
         }

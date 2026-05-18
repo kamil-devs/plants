@@ -59,7 +59,7 @@ private fun Plant.categoryLabel(): String = typeLabels[type] ?: type.replaceFirs
 
 private fun Plant.hasPendingSync(): Boolean =
     owned && !apiDataSynced &&
-        (perenualId != null || PlantDatabase.plants.any { it.polishName == name })
+            (perenualId != null || PlantDatabase.plants.any { it.polishName == name })
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

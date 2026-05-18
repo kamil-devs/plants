@@ -49,7 +49,13 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     fun addPlant(name: String, type: String) {
         viewModelScope.launch {
             plantRepository.insertPlant(
-                Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true)
+                Plant(
+                    name = name,
+                    type = type,
+                    instructions = "[]",
+                    isUserAdded = true,
+                    owned = true
+                )
             )
         }
     }

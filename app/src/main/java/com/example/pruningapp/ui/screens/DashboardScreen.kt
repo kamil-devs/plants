@@ -41,7 +41,7 @@ fun DashboardScreen(
     val activeTasksCount = visibleTasks.count { task ->
         val start = runCatching { LocalDate.parse(task.date) }.getOrNull()
         val end = runCatching { LocalDate.parse(task.endDate) }.getOrNull()
-        task.status != "done" && start != null && end != null && !today.isBefore(start) && !today.isAfter(end)
+        task.status != "done" && start != null && end != null && (!today.isBefore(start) && !today.isAfter(end))
     }
 
     Scaffold(

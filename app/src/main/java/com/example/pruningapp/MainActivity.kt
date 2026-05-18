@@ -9,11 +9,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -92,7 +91,7 @@ fun MainApp() {
         BottomNavItem("dashboard", Icons.Default.Home, "Pulpit"),
         BottomNavItem("plants", Icons.Default.Eco, "Rośliny"),
         BottomNavItem("calendar", Icons.Default.CalendarMonth, "Kalendarz"),
-        BottomNavItem("encyclopedia", Icons.Default.MenuBook, "Poradnik")
+        BottomNavItem("encyclopedia", Icons.AutoMirrored.Filled.MenuBook, "Poradnik")
     )
 
     Scaffold(
