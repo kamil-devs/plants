@@ -65,17 +65,19 @@ interface PlantDao {
 
     @Query("""
         UPDATE plants
-        SET apiDescription = :description,
-            apiWatering    = :watering,
-            apiMaintenance = :maintenance,
-            apiSunlight    = :sunlight,
-            apiImageUrl    = :imageUrl,
-            apiDataSynced  = 1
+        SET apiDescription   = :description,
+            apiDescriptionPl = :descriptionPl,
+            apiWatering      = :watering,
+            apiMaintenance   = :maintenance,
+            apiSunlight      = :sunlight,
+            apiImageUrl      = :imageUrl,
+            apiDataSynced    = 1
         WHERE id = :id
     """)
     suspend fun updateApiData(
         id: Long,
         description: String?,
+        descriptionPl: String?,
         watering: String?,
         maintenance: String?,
         sunlight: String?,

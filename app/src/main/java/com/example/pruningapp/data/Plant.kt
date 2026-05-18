@@ -19,6 +19,7 @@ data class Plant(
     // Offline-First: dane z Perenual API przechowywane lokalnie
     val perenualId: Int? = null,
     val apiDescription: String? = null,
+    val apiDescriptionPl: String? = null,
     val apiWatering: String? = null,
     val apiMaintenance: String? = null,
     val apiSunlight: String? = null,

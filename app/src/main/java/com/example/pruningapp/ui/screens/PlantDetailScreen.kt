@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pruningapp.data.PlantDatabase
+import com.example.pruningapp.util.BotanicalTranslator
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -359,14 +360,14 @@ fun PlantDetailScreen(
                                         if (!currentPlant.apiWatering.isNullOrBlank()) {
                                             ApiChip(
                                                 label = "Podlewanie",
-                                                value = translateWatering(currentPlant.apiWatering),
+                                                value = BotanicalTranslator.translateWatering(currentPlant.apiWatering!!),
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
                                         if (!currentPlant.apiMaintenance.isNullOrBlank()) {
                                             ApiChip(
                                                 label = "Pielęgnacja",
-                                                value = translateMaintenance(currentPlant.apiMaintenance),
+                                                value = BotanicalTranslator.translateMaintenance(currentPlant.apiMaintenance!!),
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
@@ -376,15 +377,14 @@ fun PlantDetailScreen(
                                 if (!currentPlant.apiSunlight.isNullOrBlank()) {
                                     ApiChip(
                                         label = "Nasłonecznienie",
-                                        value = currentPlant.apiSunlight
-                                            .split(", ")
-                                            .joinToString(", ") { translateSunlight(it) },
+                                        value = BotanicalTranslator.translateSunlightList(currentPlant.apiSunlight!!),
                                         modifier = Modifier.fillMaxWidth(),
                                         icon = Icons.Default.WbSunny
                                     )
                                 }
 
-                                if (!currentPlant.apiDescription.isNullOrBlank()) {
+                                val displayDescription = currentPlant.apiDescriptionPl ?: currentPlant.apiDescription
+                                if (!displayDescription.isNullOrBlank()) {
                                     val hasChips = !currentPlant.apiWatering.isNullOrBlank()
                                         || !currentPlant.apiMaintenance.isNullOrBlank()
                                         || !currentPlant.apiSunlight.isNullOrBlank()
@@ -394,7 +394,7 @@ fun PlantDetailScreen(
                                         )
                                     }
                                     Text(
-                                        text = currentPlant.apiDescription,
+                                        text = displayDescription,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -513,27 +513,3 @@ private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
     }
 }
 
-private fun translateWatering(value: String): String = when (value.lowercase()) {
-    "minimum"   -> "Minimalne"
-    "average"   -> "Umiarkowane"
-    "frequent"  -> "Częste"
-    "maximum"   -> "Intensywne"
-    else        -> value
-}
-
-private fun translateMaintenance(value: String): String = when (value.lowercase()) {
-    "low"      -> "Niska"
-    "moderate" -> "Umiarkowana"
-    "high"     -> "Wysoka"
-    else       -> value
-}
-
-private fun translateSunlight(value: String): String = when (value.lowercase().trim()) {
-    "full sun"                -> "Pełne słońce"
-    "part shade"              -> "Półcień"
-    "full shade"              -> "Głęboki cień"
-    "part sun/part shade"     -> "Słoneczno-półcień"
-    "sun-exposed"             -> "Nasłonecznione"
-    "filtered indirect light" -> "Filtrowane światło"
-    else                      -> value
-}

@@ -8,6 +8,7 @@ import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.data.Task
 import com.example.pruningapp.remote.PerenualApiService
+import com.example.pruningapp.util.PlantDescriptionTranslator
 import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
 import java.net.UnknownHostException
@@ -113,9 +114,13 @@ class PlantRepository(
             val details = api.getSpeciesDetails(perenualId, BuildConfig.PERENUAL_API_KEY)
             val imageUrl = details.defaultImage?.regularUrl ?: details.defaultImage?.mediumUrl
             val sunlight = details.sunlight?.joinToString(", ")
+            val descriptionPl = if (!details.description.isNullOrBlank())
+                PlantDescriptionTranslator.translate(details.description)
+            else null
             db.plantDao().updateApiData(
                 id = plantId,
                 description = details.description,
+                descriptionPl = descriptionPl,
                 watering = details.watering,
                 maintenance = details.maintenance,
                 sunlight = sunlight,
@@ -163,9 +168,11 @@ class PlantRepository(
             else -> return
         }
 
+        // Mock descriptions are already in Polish; pass them as-is for both fields
         db.plantDao().updateApiData(
             id = plantId,
             description = mock.description,
+            descriptionPl = mock.description,
             watering = mock.watering,
             maintenance = mock.maintenance,
             sunlight = mock.sunlight,

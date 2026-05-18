@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.Task
+import com.example.pruningapp.data.WeatherData
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
+import com.example.pruningapp.viewmodel.WeatherViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -28,15 +31,18 @@ import java.util.Locale
 fun DashboardScreen(
     navController: NavController,
     taskViewModel: TaskViewModel = viewModel(),
-    plantViewModel: PlantViewModel = viewModel()
+    plantViewModel: PlantViewModel = viewModel(),
+    weatherViewModel: WeatherViewModel = viewModel()
 ) {
     val upcomingTasks by taskViewModel.upcomingTasks.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
+    val weather by weatherViewModel.weather.collectAsState()
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("pl"))
 
     val ownedPlants = remember(plants) { plants.filter { it.owned } }
     val ownedIds = remember(ownedPlants) { ownedPlants.map { it.id }.toSet() }
+    val weatherWarning = weather?.takeIf { it.hasWarning }
     val visibleTasks = upcomingTasks.filter { it.plantId in ownedIds }
     val activeTasksCount = visibleTasks.count { task ->
         val start = runCatching { LocalDate.parse(task.date) }.getOrNull()
@@ -108,6 +114,12 @@ fun DashboardScreen(
                 }
             }
 
+            if (weatherWarning != null) {
+                item {
+                    WeatherWarningCard(weatherWarning)
+                }
+            }
+
             item {
                 Text(
                     text = "Nadchodzące cięcia",
@@ -167,6 +179,45 @@ fun DashboardScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherWarningCard(weather: WeatherData) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.75f)
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(28.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "${weather.temp.toInt()}°C · ${weather.description.replaceFirstChar { it.uppercase() }}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = weather.warningText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
     }

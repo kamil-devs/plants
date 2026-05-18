@@ -10,6 +10,7 @@ import com.example.pruningapp.R
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.NotifSettings
 import com.example.pruningapp.data.NotificationPreferences
+import com.example.pruningapp.repository.WeatherRepository
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -34,37 +35,54 @@ class NotificationWorker(
         val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong()).format(fmt)
         val weekEnd = today.minusDays((today.dayOfWeek.value - 1).toLong()).plusDays(6).format(fmt)
 
-        if (settings.activeToday) sendActiveTodayNotifications(db, todayStr)
-        if (settings.tomorrow) sendTomorrowNotifications(db, tomorrowStr)
+        // Check weather cache for smart warnings (graceful fallback to null on any error)
+        val weatherWarning: String? = try {
+            WeatherRepository(applicationContext).getWeather()
+                ?.takeIf { it.hasWarning }
+                ?.warningTextShort
+        } catch (_: Exception) { null }
+
+        if (settings.activeToday) sendActiveTodayNotifications(db, todayStr, weatherWarning)
+        if (settings.tomorrow) sendTomorrowNotifications(db, tomorrowStr, weatherWarning)
         if (settings.overdue) sendOverdueNotification(db, todayStr)
-        if (settings.endingSoon) sendEndingSoonNotifications(db, tomorrowStr, dayAfterStr)
+        if (settings.endingSoon) sendEndingSoonNotifications(db, tomorrowStr, dayAfterStr, weatherWarning)
         if (settings.weekly && today.dayOfWeek.value == 1) sendWeeklyWindowsNotification(db, weekStart, weekEnd)
         if (settings.smart) sendSmartNotification(db, today, todayStr, weekStart, weekEnd, fmt)
 
         return Result.success()
     }
 
-    private suspend fun sendActiveTodayNotifications(db: AppDatabase, todayStr: String) {
+    private suspend fun sendActiveTodayNotifications(
+        db: AppDatabase,
+        todayStr: String,
+        weatherWarning: String?
+    ) {
         db.taskDao().getActiveTasksForToday(todayStr).forEach { task ->
             val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
             val isStart = task.date == todayStr
+            val base = "Mozesz przycinac: ${task.date.substring(5)} - ${task.endDate.substring(5)}"
             sendNotification(
                 channelId = App.CHANNEL_ID,
                 title = if (isStart) "Dzis zaczyna sie okno ciecia - ${plant.name}"
                         else "Trwa okno ciecia - ${plant.name}",
-                body = "Mozesz przycinac: ${task.date.substring(5)} - ${task.endDate.substring(5)}",
+                body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
                 notificationId = task.id.toInt()
             )
         }
     }
 
-    private suspend fun sendTomorrowNotifications(db: AppDatabase, tomorrowStr: String) {
+    private suspend fun sendTomorrowNotifications(
+        db: AppDatabase,
+        tomorrowStr: String,
+        weatherWarning: String?
+    ) {
         db.taskDao().getTasksStartingOn(tomorrowStr).forEach { task ->
             val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
+            val base = "Okno: ${task.date.substring(5)} - ${task.endDate.substring(5)}"
             sendNotification(
                 channelId = App.CHANNEL_ID,
                 title = "Jutro zaczyna sie okno ciecia - ${plant.name}",
-                body = "Okno: ${task.date.substring(5)} - ${task.endDate.substring(5)}",
+                body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
                 notificationId = task.id.toInt() + 500_000
             )
         }
@@ -89,14 +107,16 @@ class NotificationWorker(
     private suspend fun sendEndingSoonNotifications(
         db: AppDatabase,
         tomorrowStr: String,
-        dayAfterStr: String
+        dayAfterStr: String,
+        weatherWarning: String?
     ) {
         db.taskDao().getTasksEndingSoon(tomorrowStr, dayAfterStr).forEach { task ->
             val plant = db.plantDao().getPlantById(task.plantId) ?: return@forEach
+            val base = "Ostatni dzien: ${task.endDate.substring(5)}. Nie przegap!"
             sendNotification(
                 channelId = App.CHANNEL_ID,
                 title = "Konczy sie okno ciecia - ${plant.name}",
-                body = "Ostatni dzien: ${task.endDate.substring(5)}. Nie przegap!",
+                body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
                 notificationId = task.id.toInt() + 1_500_000
             )
         }
