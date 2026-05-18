@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
-import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.util.BotanicalTranslator
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.google.gson.Gson
@@ -90,8 +89,7 @@ fun PlantDetailScreen(
 
             val syncPending = currentPlant.owned
                 && !currentPlant.apiDataSynced
-                && (currentPlant.perenualId != null
-                    || PlantDatabase.plants.any { it.polishName == currentPlant.name })
+                && currentPlant.perenualId != null
 
             LazyColumn(
                 modifier = Modifier

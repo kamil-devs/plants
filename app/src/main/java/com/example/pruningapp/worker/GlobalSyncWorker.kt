@@ -11,11 +11,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.pruningapp.data.AppDatabase
-import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.repository.PlantRepository
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 
+// Atomowa jednostka robocza: synchronizacja danych tekstowych z Perenual API.
+// Statyczny obiekt PlantDatabase zastąpiony przez encyclopediaSpeciesDao (SSOT w Room).
 class GlobalSyncWorker(
     context: Context,
     params: WorkerParameters
@@ -25,16 +26,20 @@ class GlobalSyncWorker(
         val db = AppDatabase.getDatabase(applicationContext)
         val repo = PlantRepository(db)
 
+        val encyclopediaNames = db.encyclopediaSpeciesDao().getAll()
+            .map { it.polishName.lowercase() }
+            .toSet()
+
         val pending = db.plantDao().getUnsyncedOwnedPlants()
             .filter { plant ->
                 plant.perenualId != null ||
-                    PlantDatabase.plants.any { it.polishName.equals(plant.name, ignoreCase = true) }
+                    plant.name.lowercase() in encyclopediaNames
             }
 
         for ((index, plant) in pending.withIndex()) {
             try {
                 repo.syncPlantFromApi(plant.id)
-            } catch (_: Exception) { }
+            } catch (_: Exception) {}
 
             if (index < pending.lastIndex) delay(5_000)
         }

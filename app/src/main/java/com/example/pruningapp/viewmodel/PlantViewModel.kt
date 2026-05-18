@@ -4,8 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pruningapp.App
+import com.example.pruningapp.data.EncyclopediaSpecies
 import com.example.pruningapp.data.Plant
+import com.example.pruningapp.data.PruningGuideCache
 import com.example.pruningapp.data.PruningRule
+import com.example.pruningapp.network.WikipediaImageProviderImpl
 import com.example.pruningapp.repository.PlantRepository
 import com.example.pruningapp.worker.GlobalSyncWorker
 import com.example.pruningapp.worker.WikipediaSyncWorker
@@ -17,14 +20,23 @@ import kotlinx.coroutines.launch
 
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val plantRepository = PlantRepository((application as App).database)
+    private val db = (application as App).database
+    private val plantRepository = PlantRepository(
+        db = db,
+        wikiImageProvider = WikipediaImageProviderImpl.create(application)
+    )
 
     val allPlants: StateFlow<List<Plant>> = plantRepository.getAllPlants()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val pruningGuideCache: StateFlow<List<com.example.pruningapp.data.PruningGuideCache>> = 
+    val pruningGuideCache: StateFlow<List<PruningGuideCache>> =
         plantRepository.getPruningGuideCache()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // Reaktywny katalog encyklopedii — zastępuje statyczny PlantDatabase.plants.
+    val encyclopediaSpecies: StateFlow<List<EncyclopediaSpecies>> =
+        db.encyclopediaSpeciesDao().getAllFlow()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     suspend fun getPlantById(id: Long): Plant? = plantRepository.getPlantById(id)
 
@@ -39,28 +51,18 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleOwned(plant: Plant) {
         viewModelScope.launch {
             plantRepository.setOwned(plant.id, !plant.owned)
-            if (!plant.owned) {
-                GlobalSyncWorker.enqueue(getApplication())
-            }
+            if (!plant.owned) GlobalSyncWorker.enqueue(getApplication())
         }
     }
 
     fun togglePinned(plant: Plant) {
-        viewModelScope.launch {
-            plantRepository.setPinned(plant.id, !plant.pinned)
-        }
+        viewModelScope.launch { plantRepository.setPinned(plant.id, !plant.pinned) }
     }
 
     fun addPlant(name: String, type: String) {
         viewModelScope.launch {
             plantRepository.insertPlant(
-                Plant(
-                    name = name,
-                    type = type,
-                    instructions = "[]",
-                    isUserAdded = true,
-                    owned = true
-                )
+                Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true)
             )
             GlobalSyncWorker.enqueue(getApplication())
             WikipediaSyncWorker.enqueue(getApplication())
@@ -68,9 +70,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deletePlant(plant: Plant) {
-        viewModelScope.launch {
-            plantRepository.deletePlant(plant)
-        }
+        viewModelScope.launch { plantRepository.deletePlant(plant) }
     }
 
     fun saveEditedPlantById(
@@ -92,5 +92,4 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             plantRepository.replacePruningRulesAndTasks(plantId, rules)
         }
     }
-
 }

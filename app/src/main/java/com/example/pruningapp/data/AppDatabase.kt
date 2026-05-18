@@ -8,8 +8,16 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Plant::class, PruningRule::class, Task::class, Collection::class, PlantCollectionCrossRef::class, PruningGuideCache::class],
-    version = 12,
+    entities = [
+        Plant::class,
+        PruningRule::class,
+        Task::class,
+        Collection::class,
+        PlantCollectionCrossRef::class,
+        PruningGuideCache::class,
+        EncyclopediaSpecies::class
+    ],
+    version = 13,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -18,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun collectionDao(): CollectionDao
     abstract fun pruningGuideCacheDao(): PruningGuideCacheDao
+    abstract fun encyclopediaSpeciesDao(): EncyclopediaSpeciesDao
 
     companion object {
         @Volatile
@@ -74,9 +83,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    "ALTER TABLE pruning_guide_cache ADD COLUMN imageUrl TEXT"
-                )
+                database.execSQL("ALTER TABLE pruning_guide_cache ADD COLUMN imageUrl TEXT")
             }
         }
 
@@ -109,6 +116,28 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Krok 1 SSOT: nowa tabela katalogu gatunków. Dane importowane asynchronicznie
+        // przez EncyclopediaImporter w App.onCreate gdy tabela jest pusta.
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS encyclopedia_species " +
+                    "(perenualId INTEGER NOT NULL PRIMARY KEY, " +
+                    "polishName TEXT NOT NULL, " +
+                    "latinName TEXT NOT NULL, " +
+                    "category TEXT NOT NULL)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_encyclopedia_species_polishName " +
+                    "ON encyclopedia_species(polishName)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_encyclopedia_species_latinName " +
+                    "ON encyclopedia_species(latinName)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -116,7 +145,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "plant_pruning_db"
                 )
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(
+                        MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
+                        MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+                        MIGRATION_12_13
+                    )
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

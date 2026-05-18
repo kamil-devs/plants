@@ -9,10 +9,11 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.pruningapp.data.AppDatabase
+import com.example.pruningapp.data.EncyclopediaImporter
 import com.example.pruningapp.data.JsonImporter
 import com.example.pruningapp.worker.GlobalSyncWorker
-import com.example.pruningapp.worker.WikipediaSyncWorker
 import com.example.pruningapp.worker.NotificationWorker
+import com.example.pruningapp.worker.WikipediaSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,8 +38,8 @@ class App : Application(), ImageLoaderFactory {
             }
             .diskCache {
                 DiskCache.Builder()
-                    .directory(this.cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.02) // ok. 50MB-100MB zależnie od urządzenia
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizePercent(0.02)
                     .build()
             }
             .okHttpClient {
@@ -51,7 +52,7 @@ class App : Application(), ImageLoaderFactory {
                     }
                     .build()
             }
-            .respectCacheHeaders(false) // Ignorujemy nagłówki Cache-Control serwera, by wymusić offline-first
+            .respectCacheHeaders(false)
             .build()
     }
 
@@ -61,10 +62,15 @@ class App : Application(), ImageLoaderFactory {
         scheduleNotificationWorker()
 
         CoroutineScope(Dispatchers.IO).launch {
+            // Kolejność: najpierw encyklopedia, potem rośliny (JsonImporter potrzebuje encyclopediaSpeciesDao)
+            if (database.encyclopediaSpeciesDao().getCount() == 0) {
+                EncyclopediaImporter(this@App, database).import()
+            }
             if (database.plantDao().getPlantCount() == 0) {
                 JsonImporter(this@App, database).import()
             }
         }
+
         GlobalSyncWorker.enqueue(this)
         WikipediaSyncWorker.enqueue(this)
     }
@@ -75,20 +81,20 @@ class App : Application(), ImageLoaderFactory {
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
-                "Przypomnienia o cieciu",
+                getString(R.string.channel_pruning_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Codzienne przypomnienia: aktywne okna, zaległe i kończące sie ciecia"
+                description = getString(R.string.channel_pruning_description)
             }
         )
 
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_SMART_ID,
-                "Inteligentne wskazowki",
+                getString(R.string.channel_smart_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Sezonowe porady ogrodnicze dostosowane do posiadanych roslin"
+                description = getString(R.string.channel_smart_description)
             }
         )
     }
@@ -114,11 +120,8 @@ class App : Application(), ImageLoaderFactory {
         val now = LocalTime.now()
         val target = LocalTime.of(8, 0)
         val duration = java.time.Duration.between(now, target)
-        val minutes = if (now.isBefore(target)) {
-            duration.toMinutes()
-        } else {
-            duration.toMinutes() + 24 * 60
-        }
+        val minutes = if (now.isBefore(target)) duration.toMinutes()
+                      else duration.toMinutes() + 24 * 60
         return minutes.coerceAtLeast(1)
     }
 

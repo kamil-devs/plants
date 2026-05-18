@@ -6,13 +6,14 @@ import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+// perenualId pochodzi teraz z encyclopediaSpeciesDao (SSOT) zamiast statycznego PlantDatabase.
+// Wymaga: encyclopedia_species musi być zasilona przed wywołaniem import().
 class JsonImporter(
     private val context: Context,
     private val db: AppDatabase
 ) {
     private val gson = Gson()
-    private val fullFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    private val windowFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     suspend fun import() {
         val json = context.assets.open("plants.json").bufferedReader().use { it.readText() }
@@ -20,7 +21,7 @@ class JsonImporter(
         val plants: List<PlantJson> = gson.fromJson(json, type)
 
         plants.forEach { plantJson ->
-            val perenualId = PlantDatabase.plants.find { it.polishName == plantJson.name }?.perenualId
+            val perenualId = db.encyclopediaSpeciesDao().getByPolishName(plantJson.name)?.perenualId
             val plant = Plant(
                 name = plantJson.name,
                 type = plantJson.type,
@@ -33,45 +34,36 @@ class JsonImporter(
             val plantId = db.plantDao().insertPlant(plant)
 
             plantJson.pruning.forEach { (pruningType, window) ->
-                val rule = PruningRule(
-                    plantId = plantId,
-                    startMonthDay = window.start,
-                    endMonthDay = window.end,
-                    type = pruningType
+                db.plantDao().insertPruningRule(
+                    PruningRule(
+                        plantId = plantId,
+                        startMonthDay = window.start,
+                        endMonthDay = window.end,
+                        type = pruningType
+                    )
                 )
-                db.plantDao().insertPruningRule(rule)
                 generateTask(plantId, window.start, window.end, pruningType)
             }
         }
     }
 
-    // Generuje JEDNO zadanie na okno cięcia na rok — nie per dzień.
-    // Okno to zakres, w którym można ciąć, nie wymóg codziennego cięcia.
-    private suspend fun generateTask(
-        plantId: Long,
-        start: String,   // MM-dd, np. "04-01"
-        end: String,     // MM-dd, np. "09-01"
-        type: String
-    ) {
+    private suspend fun generateTask(plantId: Long, start: String, end: String, type: String) {
         val today = LocalDate.now()
-
         for (yearOffset in 0..1) {
             val year = today.year + yearOffset
-            val startDate = LocalDate.parse("$year-$start", windowFormatter)
-            val endDate = LocalDate.parse("$year-$end", windowFormatter)
-
-            // Pomiń okna, które całkowicie minęły
+            val startDate = LocalDate.parse("$year-$start", formatter)
+            val endDate = LocalDate.parse("$year-$end", formatter)
             if (endDate.isBefore(today)) continue
 
             val count = db.taskDao().countTaskForPlantAndDate(
-                plantId, startDate.format(fullFormatter), type
+                plantId, startDate.format(formatter), type
             )
             if (count == 0) {
                 db.taskDao().insertTask(
                     Task(
                         plantId = plantId,
-                        date = startDate.format(fullFormatter),
-                        endDate = endDate.format(fullFormatter),
+                        date = startDate.format(formatter),
+                        endDate = endDate.format(formatter),
                         type = type,
                         status = "pending"
                     )
@@ -88,14 +80,7 @@ class JsonImporter(
         val harvest: HarvestInfo? = null
     )
 
-    data class PruningWindow(
-        val start: String,
-        val end: String
-    )
+    data class PruningWindow(val start: String, val end: String)
 
-    data class HarvestInfo(
-        val start: String,
-        val end: String,
-        val appearance: String
-    )
+    data class HarvestInfo(val start: String, val end: String, val appearance: String)
 }

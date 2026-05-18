@@ -48,6 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,10 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-import com.example.pruningapp.data.PerenualPlant
-import com.example.pruningapp.data.PlantDatabase
+import com.example.pruningapp.R
+import com.example.pruningapp.data.EncyclopediaSpecies
 import com.example.pruningapp.repository.PruningGuideResult
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.PruningGuideViewModel
@@ -73,8 +74,13 @@ fun PerenualPlantDetailScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
-    val dbPlant = remember(perenualId) { PlantDatabase.findById(perenualId) }
-    val localPlant = plants.find { it.name.equals(dbPlant?.polishName, ignoreCase = true) }
+    val encyclopediaSpecies by plantViewModel.encyclopediaSpecies.collectAsState()
+
+    // Lookup z reaktywnego StateFlow — eliminuje statyczny PlantDatabase.findById().
+    val species = remember(perenualId, encyclopediaSpecies) {
+        encyclopediaSpecies.find { it.perenualId == perenualId }
+    }
+    val localPlant = plants.find { it.name.equals(species?.polishName, ignoreCase = true) }
 
     LaunchedEffect(perenualId) {
         viewModel.load(perenualId)
@@ -83,10 +89,15 @@ fun PerenualPlantDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(dbPlant?.polishName ?: "Poradnik pielęgnacji") },
+                title = {
+                    Text(species?.polishName ?: stringResource(R.string.screen_pruning_guide))
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -103,12 +114,14 @@ fun PerenualPlantDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val s = state
-            if (dbPlant != null) {
-                item { 
+            if (species != null) {
+                item {
                     PlantHeaderSection(
-                        plant = dbPlant, 
-                        imageUrl = localPlant?.wikiImageUrl ?: localPlant?.apiImageUrl ?: (s as? PruningGuideResult.Success)?.imageUrl
-                    ) 
+                        species = species,
+                        imageUrl = localPlant?.wikiImageUrl
+                            ?: localPlant?.apiImageUrl
+                            ?: (s as? PruningGuideResult.Success)?.imageUrl
+                    )
                 }
             }
 
@@ -136,7 +149,7 @@ fun PerenualPlantDetailScreen(
 
                     item {
                         Text(
-                            text = "Dane: perenual.com · ${s.commonName}",
+                            text = stringResource(R.string.encyclopedia_data_source, s.commonName),
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
@@ -153,7 +166,7 @@ fun PerenualPlantDetailScreen(
 }
 
 @Composable
-private fun PlantHeaderSection(plant: PerenualPlant, imageUrl: String?) {
+private fun PlantHeaderSection(species: EncyclopediaSpecies, imageUrl: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -164,7 +177,7 @@ private fun PlantHeaderSection(plant: PerenualPlant, imageUrl: String?) {
             if (!imageUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = imageUrl,
-                    contentDescription = plant.polishName,
+                    contentDescription = species.polishName,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
@@ -177,12 +190,12 @@ private fun PlantHeaderSection(plant: PerenualPlant, imageUrl: String?) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = plant.polishName,
+                    text = species.polishName,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = plant.latinName,
+                    text = species.latinName,
                     style = MaterialTheme.typography.bodyLarge,
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
@@ -199,7 +212,7 @@ private fun PruningTimingSection(months: List<String>) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            SectionTitle("KIEDY PRZYCINAĆ")
+            SectionTitle(stringResource(R.string.section_when_to_prune))
             if (months.isNotEmpty()) {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -218,7 +231,7 @@ private fun PruningTimingSection(months: List<String>) {
                 }
             } else {
                 Text(
-                    text = "Brak danych o terminach przycinania dla tej rośliny.",
+                    text = stringResource(R.string.section_no_pruning_dates),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                 )
@@ -237,7 +250,7 @@ private fun FrequencySection(frequency: String) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SectionTitle("JAK CZĘSTO")
+            SectionTitle(stringResource(R.string.section_how_often))
             Text(
                 text = frequency,
                 style = MaterialTheme.typography.titleLarge,
@@ -258,7 +271,7 @@ private fun MaintenanceSection(level: String) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SectionTitle("PIELĘGNACJA")
+            SectionTitle(stringResource(R.string.section_maintenance))
             MaintenanceBadge(level)
         }
     }
@@ -272,7 +285,7 @@ private fun DescriptionSection(description: String) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SectionTitle("OPIS")
+            SectionTitle(stringResource(R.string.section_description))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -284,7 +297,11 @@ private fun DescriptionSection(description: String) {
                 onClick = { expanded = !expanded },
                 contentPadding = PaddingValues(0.dp)
             ) {
-                Text(if (expanded) "Pokaż mniej" else "Czytaj więcej")
+                Text(
+                    stringResource(
+                        if (expanded) R.string.action_show_less else R.string.action_read_more
+                    )
+                )
             }
         }
     }
@@ -338,11 +355,11 @@ private fun DetailNotFoundCard() {
         ) {
             Icon(
                 imageVector = Icons.Default.Info,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_info),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
             )
             Text(
-                text = "Brak szczegółowych danych pielęgnacyjnych w bazie Perenual dla tej rośliny.",
+                text = stringResource(R.string.encyclopedia_no_data),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -372,18 +389,15 @@ private fun DetailErrorCard(message: String, onRetry: () -> Unit) {
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = "Błąd: $message",
+                    text = stringResource(R.string.error_prefix, message),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-            TextButton(
-                onClick = onRetry,
-                contentPadding = PaddingValues(0.dp)
-            ) {
+            TextButton(onClick = onRetry, contentPadding = PaddingValues(0.dp)) {
                 Text(
-                    text = "Spróbuj ponownie",
+                    text = stringResource(R.string.action_retry),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
@@ -426,18 +440,15 @@ private fun MaintenanceBadge(level: String) {
         "high"     -> MaterialTheme.colorScheme.errorContainer
         else       -> MaterialTheme.colorScheme.surfaceVariant
     }
-    val label = when (level.lowercase()) {
-        "low"      -> "Niska"
-        "moderate" -> "Średnia"
-        "high"     -> "Wysoka"
-        else       -> level
+    val labelRes = when (level.lowercase()) {
+        "low"      -> R.string.maintenance_low
+        "moderate" -> R.string.maintenance_medium
+        "high"     -> R.string.maintenance_high
+        else       -> null
     }
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = containerColor
-    ) {
+    Surface(shape = RoundedCornerShape(50), color = containerColor) {
         Text(
-            text = label,
+            text = if (labelRes != null) stringResource(labelRes) else level,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium
@@ -445,19 +456,18 @@ private fun MaintenanceBadge(level: String) {
     }
 }
 
+// Słownik tłumaczeń miesięcy — lokalne prywatne mapowanie eliminuje hardcoding w logice.
 private val monthTranslations = mapOf(
-    "January"   to "Styczeń",
-    "February"  to "Luty",
-    "March"     to "Marzec",
-    "April"     to "Kwiecień",
-    "May"       to "Maj",
-    "June"      to "Czerwiec",
-    "July"      to "Lipiec",
-    "August"    to "Sierpień",
-    "September" to "Wrzesień",
-    "October"   to "Październik",
-    "November"  to "Listopad",
-    "December"  to "Grudzień"
+    "January" to R.string.month_january, "February" to R.string.month_february,
+    "March" to R.string.month_march, "April" to R.string.month_april,
+    "May" to R.string.month_may, "June" to R.string.month_june,
+    "July" to R.string.month_july, "August" to R.string.month_august,
+    "September" to R.string.month_september, "October" to R.string.month_october,
+    "November" to R.string.month_november, "December" to R.string.month_december
 )
 
-private fun translateMonth(month: String): String = monthTranslations[month] ?: month
+@Composable
+private fun translateMonth(month: String): String {
+    val resId = monthTranslations[month] ?: return month
+    return stringResource(resId)
+}

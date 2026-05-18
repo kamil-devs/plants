@@ -1,0 +1,19 @@
+[
+  {"keyword": "Porzeczka",  "latinName": "Ribes"},
+  {"keyword": "Malina",     "latinName": "Rubus idaeus"},
+  {"keyword": "Borówka",    "latinName": "Vaccinium"},
+  {"keyword": "Wierzba",    "latinName": "Salix"},
+  {"keyword": "Klon",       "latinName": "Acer"},
+  {"keyword": "Wiśnia",     "latinName": "Prunus cerasus"},
+  {"keyword": "Czereśnia",  "latinName": "Prunus avium"},
+  {"keyword": "Grusza",     "latinName": "Pyrus"},
+  {"keyword": "Śliwa",      "latinName": "Prunus domestica"},
+  {"keyword": "Jabłoń",     "latinName": "Malus domestica"},
+  {"keyword": "Aloes",      "latinName": "Aloe"},
+  {"keyword": "Jeżyna",     "latinName": "Rubus"},
+  {"keyword": "Hortensja",  "latinName": "Hydrangea"},
+  {"keyword": "Tawuła",     "latinName": "Spiraea"},
+  {"keyword": "Jałowiec",   "latinName": "Juniperus"},
+  {"keyword": "Róża",       "latinName": "Rosa"},
+  {"keyword": "Magnolia",   "latinName": "Magnolia"}
+]

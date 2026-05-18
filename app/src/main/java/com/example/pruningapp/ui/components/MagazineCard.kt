@@ -1,7 +1,15 @@
 package com.example.pruningapp.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -9,7 +17,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -17,33 +31,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
+import com.example.pruningapp.R
 
+// MagazineCard jest niezależny od modeli biznesowych dzięki interfejsowi CardDisplayable.
+// Komponent może być przeniesiony do modułu :core:ui bez żadnych zależności na :data.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MagazineCard(
-    title: String,
-    subtitle: String,
-    category: String,
-    imageUrl: String?,
+    item: CardDisplayable,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     owned: Boolean = false,
     pinned: Boolean = false,
     syncPending: Boolean = false,
-    onClick: () -> Unit,
     onToggleOwned: (() -> Unit)? = null,
     onTogglePinned: (() -> Unit)? = null
 ) {
-    // Zapamiętujemy URL obrazu, aby wymusić odświeżenie Coil przy zmianie
-    val currentImageUrl = remember(imageUrl) { imageUrl }
+    val imageUrl = remember(item.imageUrl) { item.imageUrl }
 
     Card(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(220.dp),
         shape = MaterialTheme.shapes.large,
@@ -53,14 +68,13 @@ fun MagazineCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
-                model = currentImageUrl.takeIf { !it.isNullOrBlank() },
-                contentDescription = title,
+                model = imageUrl.takeIf { !it.isNullOrBlank() },
+                contentDescription = item.title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 loading = { CardImagePlaceholder() }
             )
 
-            // Overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -72,7 +86,6 @@ fun MagazineCard(
                     )
             )
 
-            // Top Actions
             Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -89,7 +102,7 @@ fun MagazineCard(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Sync,
-                                contentDescription = "Synchronizacja...",
+                                contentDescription = stringResource(R.string.cd_sync_pending),
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -113,7 +126,6 @@ fun MagazineCard(
                 }
             }
 
-            // Category Badge (Top Left)
             Surface(
                 modifier = Modifier
                     .padding(12.dp)
@@ -123,21 +135,20 @@ fun MagazineCard(
                 contentColor = Color.White
             ) {
                 Text(
-                    text = category,
+                    text = item.category,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 10.sp
                 )
             }
 
-            // Content (Bottom)
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(12.dp)
             ) {
                 Text(
-                    text = title,
+                    text = item.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -145,7 +156,7 @@ fun MagazineCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = subtitle,
+                    text = item.subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f),
                     fontStyle = FontStyle.Italic,

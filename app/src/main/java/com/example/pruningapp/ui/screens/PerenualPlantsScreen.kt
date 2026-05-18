@@ -26,13 +26,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pruningapp.data.PlantDatabase
+import com.example.pruningapp.R
+import com.example.pruningapp.data.EncyclopediaSpecies
 import com.example.pruningapp.ui.components.MagazineCard
+import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
 
+// Ekran pobiera katalog z encyclopediaSpecies StateFlow — Room jest SSOT,
+// nie ma już żadnej referencji do statycznego PlantDatabase.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerenualPlantsScreen(
@@ -41,13 +46,14 @@ fun PerenualPlantsScreen(
 ) {
     val plants by plantViewModel.allPlants.collectAsState()
     val cache by plantViewModel.pruningGuideCache.collectAsState()
+    val encyclopediaSpecies by plantViewModel.encyclopediaSpecies.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Poradnik pielęgnacji") },
+                title = { Text(stringResource(R.string.screen_encyclopedia)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
         }
@@ -75,11 +81,11 @@ fun PerenualPlantsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.cd_info),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                         Text(
-                            text = "Szczegółowe porady przycinania z bazy Perenual. Kliknij roślinę, aby zobaczyć ekspertyzę.",
+                            text = stringResource(R.string.encyclopedia_info_tip),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -87,20 +93,33 @@ fun PerenualPlantsScreen(
                 }
             }
 
-            items(PlantDatabase.plants) { dbPlant ->
-                val localPlant = plants.find { it.name.equals(dbPlant.polishName, ignoreCase = true) }
-                val cachedEntry = if (dbPlant.perenualId > 0) {
-                    cache.find { it.perenualId == dbPlant.perenualId }
+            items(encyclopediaSpecies) { species ->
+                val localPlant = plants.find {
+                    it.name.equals(species.polishName, ignoreCase = true)
+                }
+                val cachedEntry = if (species.perenualId > 0) {
+                    cache.find { it.perenualId == species.perenualId }
                 } else null
 
+                val imageUrl = localPlant?.wikiImageUrl
+                    ?: localPlant?.apiImageUrl
+                    ?: cachedEntry?.imageUrl
+
                 MagazineCard(
-                    title = dbPlant.polishName,
-                    subtitle = dbPlant.latinName,
-                    category = dbPlant.category,
-                    imageUrl = localPlant?.wikiImageUrl ?: localPlant?.apiImageUrl ?: cachedEntry?.imageUrl,
-                    onClick = { navController.navigate("encyclopedia/${dbPlant.perenualId}") }
+                    item = species.toCardItem(imageUrl),
+                    onClick = { navController.navigate("encyclopedia/${species.perenualId}") }
                 )
             }
         }
     }
 }
+
+// Extension function: tworzy CardDisplayable z encji Room bez importowania komponentu
+// MagazineCard do pakietu data — izolacja warstw zachowana.
+private fun EncyclopediaSpecies.toCardItem(imageUrl: String?): PlantCardItem =
+    PlantCardItem(
+        title = polishName,
+        subtitle = latinName,
+        imageUrl = imageUrl,
+        category = category
+    )

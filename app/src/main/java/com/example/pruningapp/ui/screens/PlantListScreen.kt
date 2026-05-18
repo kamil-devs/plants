@@ -19,7 +19,19 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,12 +41,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.pruningapp.R
 import com.example.pruningapp.data.Plant
-import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.ui.components.MagazineCard
+import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
 
 private val typeLabels = mapOf(
@@ -43,11 +57,20 @@ private val typeLabels = mapOf(
     "ozdobne drzewo" to "Ozdobne drzewa"
 )
 
-private fun Plant.categoryLabel(): String = typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
+private fun Plant.categoryLabel(): String =
+    typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
 
+// perenualId pochodzi z importu JSON (opartego na encyclopediaSpeciesDao) —
+// nie ma potrzeby odpytywania statycznego PlantDatabase w czasie renderowania.
 private fun Plant.hasPendingSync(): Boolean =
-    owned && !apiDataSynced &&
-            (perenualId != null || PlantDatabase.plants.any { it.polishName == name })
+    owned && !apiDataSynced && perenualId != null
+
+private fun Plant.toCardItem(): PlantCardItem = PlantCardItem(
+    title = name,
+    subtitle = categoryLabel(),
+    imageUrl = wikiImageUrl ?: apiImageUrl,
+    category = categoryLabel()
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,9 +93,7 @@ fun PlantListScreen(
     }
 
     LaunchedEffect(availableTypes) {
-        if (selectedType != null && selectedType !in availableTypes) {
-            selectedType = null
-        }
+        if (selectedType != null && selectedType !in availableTypes) selectedType = null
     }
 
     val filteredPlants = remember(basePlants, searchQuery, selectedType) {
@@ -82,33 +103,38 @@ fun PlantListScreen(
                 if (searchQuery.isBlank()) list
                 else list.filter {
                     it.name.contains(searchQuery, ignoreCase = true) ||
-                            it.type.contains(searchQuery, ignoreCase = true)
+                        it.type.contains(searchQuery, ignoreCase = true)
                 }
             }
     }
 
-    // Przypniety na gorze, potem alfabetycznie.
-    // Uzywamy 'plants' jako klucza remember, aby reagowac na zmiany pol wikiImageUrl
     val sortedPlants = remember(plants, filteredPlants) {
-        filteredPlants.sortedWith(compareByDescending<Plant> { it.pinned }.thenBy { it.name })
+        filteredPlants.sortedWith(
+            compareByDescending<Plant> { it.pinned }.thenBy { it.name }
+        )
     }
 
     plantToDeleteState.value?.let { plant ->
         AlertDialog(
             onDismissRequest = { plantToDeleteState.value = null },
-            title = { Text("Usun rosline") },
-            text = { Text("Czy na pewno chcesz usunac \"${plant.name}\"? Tej operacji nie mozna cofnac.") },
+            title = { Text(stringResource(R.string.dialog_delete_plant_title)) },
+            text = {
+                Text(stringResource(R.string.dialog_delete_plant_message, plant.name))
+            },
             confirmButton = {
                 TextButton(onClick = {
                     plantViewModel.deletePlant(plant)
                     plantToDeleteState.value = null
                 }) {
-                    Text("Usun", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.action_delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { plantToDeleteState.value = null }) {
-                    Text("Anuluj")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -117,10 +143,13 @@ fun PlantListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Moje rośliny") },
+                title = { Text(stringResource(R.string.screen_my_plants)) },
                 actions = {
                     IconButton(onClick = { navController.navigate("collections") }) {
-                        Icon(Icons.Default.Folder, contentDescription = "Kolekcje")
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = stringResource(R.string.cd_collections)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -130,7 +159,10 @@ fun PlantListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { navController.navigate("add_plant") }) {
-                Icon(Icons.Default.Add, contentDescription = "Dodaj rosline")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(R.string.cd_add_plant)
+                )
             }
         }
     ) { padding ->
@@ -142,14 +174,14 @@ fun PlantListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Szukaj roslin...") },
+                placeholder = { Text(stringResource(R.string.search_plants_hint)) },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null)
+                    Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search))
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Wyczysc")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_clear))
                         }
                     }
                 },
@@ -168,21 +200,15 @@ fun PlantListScreen(
                 item {
                     FilterChip(
                         selected = !showUserOnly && selectedType == null,
-                        onClick = {
-                            showUserOnly = false
-                            selectedType = null
-                        },
-                        label = { Text("Wszystkie") }
+                        onClick = { showUserOnly = false; selectedType = null },
+                        label = { Text(stringResource(R.string.filter_all)) }
                     )
                 }
                 item {
                     FilterChip(
                         selected = showUserOnly,
-                        onClick = {
-                            showUserOnly = !showUserOnly
-                            selectedType = null
-                        },
-                        label = { Text("Moje") }
+                        onClick = { showUserOnly = !showUserOnly; selectedType = null },
+                        label = { Text(stringResource(R.string.filter_mine)) }
                     )
                 }
                 items(availableTypes) { type ->
@@ -198,10 +224,13 @@ fun PlantListScreen(
                 plants.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Brak roslin", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                stringResource(R.string.state_no_plants),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Dodaj pierwsza rosline przyciskiem +",
+                                stringResource(R.string.state_no_plants_hint),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -213,9 +242,12 @@ fun PlantListScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = when {
-                                searchQuery.isNotBlank() -> "Brak wynikow dla: $searchQuery"
-                                showUserOnly -> "Nie masz jeszcze posiadanych roslin"
-                                else -> "Brak roslin w tej kategorii"
+                                searchQuery.isNotBlank() ->
+                                    stringResource(R.string.state_no_results_for, searchQuery)
+                                showUserOnly ->
+                                    stringResource(R.string.state_no_owned_plants)
+                                else ->
+                                    stringResource(R.string.state_no_plants_in_category)
                             },
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -235,10 +267,7 @@ fun PlantListScreen(
                     ) {
                         gridItems(sortedPlants, key = { it.id }) { plant ->
                             MagazineCard(
-                                title = plant.name,
-                                subtitle = plant.categoryLabel(),
-                                category = plant.categoryLabel(),
-                                imageUrl = plant.wikiImageUrl ?: plant.apiImageUrl,
+                                item = plant.toCardItem(),
                                 owned = plant.owned,
                                 pinned = plant.pinned,
                                 syncPending = plant.hasPendingSync(),
