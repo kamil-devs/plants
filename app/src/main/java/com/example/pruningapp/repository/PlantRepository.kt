@@ -5,6 +5,7 @@ import com.example.pruningapp.BuildConfig
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.Plant
 import com.example.pruningapp.data.PlantDatabase
+import com.example.pruningapp.data.PerenualPlant
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.data.Task
 import com.example.pruningapp.remote.PerenualApiService
@@ -22,6 +23,9 @@ class PlantRepository(
 ) {
 
     fun getAllPlants(): Flow<List<Plant>> = db.plantDao().getAllPlants()
+
+    fun getPruningGuideCache(): Flow<List<com.example.pruningapp.data.PruningGuideCache>> = 
+        db.pruningGuideCacheDao().getAllFlow()
 
     suspend fun getPlantById(id: Long): Plant? = db.plantDao().getPlantById(id)
 
@@ -43,83 +47,175 @@ class PlantRepository(
     suspend fun getPruningRules(plantId: Long): List<PruningRule> =
         db.plantDao().getPruningRulesForPlant(plantId)
 
-    suspend fun syncWikipediaImage(plantId: Long) {
-        val plant = db.plantDao().getPlantById(plantId) ?: return
-        if (!plant.wikiImageUrl.isNullOrBlank()) return
+    suspend fun syncWikipediaImage(plantId: Long): Boolean {
+        val plant = db.plantDao().getPlantById(plantId) ?: return false
+        if (!plant.wikiImageUrl.isNullOrBlank()) return false
 
         val dbEntry = PlantDatabase.plants.find { it.polishName.equals(plant.name, ignoreCase = true) }
         val latinName = dbEntry?.latinName
+        val perenualId = plant.perenualId ?: dbEntry?.perenualId
+        
+        // Jeśli znaleźliśmy perenualId w bazie technicznej, a w tabeli go brak - uzupełnij go
+        if (plant.perenualId == null && perenualId != null) {
+            db.plantDao().setPerenualId(plantId, perenualId)
+        }
 
-        Log.d("PlantRepository", "Syncing wiki image for ${plant.name}. Latin name found in DB: $latinName")
+        return syncWikipediaImageInternal(
+            name = plant.name,
+            latinName = latinName,
+            perenualId = perenualId,
+            plantId = plantId
+        )
+    }
+
+    suspend fun syncWikipediaImageForEncyclopedia(dbPlant: PerenualPlant): Boolean {
+        // Sprawdź czy już mamy obraz w cache (jeśli ID jest poprawne)
+        if (dbPlant.perenualId > 0) {
+            val cache = db.pruningGuideCacheDao().getById(dbPlant.perenualId)
+            if (!cache?.imageUrl.isNullOrBlank()) return false
+        }
+
+        // Sprawdź czy mamy lokalną roślinę o tej nazwie, która może mieć już obraz
+        val localPlant = db.plantDao().getPlantByName(dbPlant.polishName)
+        if (localPlant != null && !localPlant.wikiImageUrl.isNullOrBlank()) {
+             // Możemy przenieść obraz z lokalnej rośliny do cache poradnika bez wołania Wiki
+             if (dbPlant.perenualId > 0) {
+                 applyWikiImageUrl(localPlant.wikiImageUrl, dbPlant.polishName, null, dbPlant.perenualId)
+             }
+             return false
+        }
+        
+        return syncWikipediaImageInternal(
+            name = dbPlant.polishName,
+            latinName = dbPlant.latinName,
+            perenualId = if (dbPlant.perenualId > 0) dbPlant.perenualId else localPlant?.perenualId,
+            plantId = localPlant?.id
+        )
+    }
+
+    private suspend fun syncWikipediaImageInternal(
+        name: String,
+        latinName: String?,
+        perenualId: Int?,
+        plantId: Long?
+    ): Boolean {
+        Log.d("PlantRepository", "Attempting sync for: $name (Latin: $latinName, perenualId: $perenualId)")
+
+        // Funkcja pomocnicza do sprawdzania czy błąd to 429
+        fun isRateLimit(e: Exception): Boolean = e.message?.contains("429") == true
 
         // 1. Spróbuj łacińskiej nazwy na angielskiej Wikipedii
         if (latinName != null) {
-            val url = fetchWikiImage(latinName, "https://en.wikipedia.org/w/api.php")
-            if (url != null) {
-                Log.d("PlantRepository", "Found EN wiki image using Latin name ($latinName) for ${plant.name}: $url")
-                db.plantDao().updateWikiImageUrl(plantId, url)
-                return
+            try {
+                // Specjalna obsługa dla Truskawki (Fragaria × ananassa -> Fragaria x ananassa)
+                val searchLatin = latinName.replace("×", "x")
+                val url = fetchWikiImage(searchLatin, "https://en.wikipedia.org/w/api.php")
+                if (url != null) {
+                    Log.d("PlantRepository", "SUCCESS: Found EN wiki image via Latin ($searchLatin) for $name")
+                    applyWikiImageUrl(url, name, plantId, perenualId)
+                    return true
+                }
+            } catch (e: Exception) {
+                if (isRateLimit(e)) return true
             }
         }
 
         // 2. Spróbuj polskiej nazwy na polskiej Wikipedii
-        // Najpierw pełna nazwa (ale bez nawiasów, np. "Żywotnik (tuja)" -> "Żywotnik tuja")
-        val cleanName = plant.name.replace("(", "").replace(")", "").trim()
-        val urlPl = fetchWikiImage(cleanName, "https://pl.wikipedia.org/w/api.php")
-        if (urlPl != null) {
-            Log.d("PlantRepository", "Found PL wiki image for $cleanName: $urlPl")
-            db.plantDao().updateWikiImageUrl(plantId, urlPl)
-            return
+        val cleanName = name.replace("(", "").replace(")", "").trim()
+        try {
+            val urlPl = fetchWikiImage(cleanName, "https://pl.wikipedia.org/w/api.php")
+            if (urlPl != null) {
+                Log.d("PlantRepository", "SUCCESS: Found PL wiki image for $cleanName")
+                applyWikiImageUrl(urlPl, cleanName, plantId, perenualId)
+                return true
+            }
+        } catch (e: Exception) {
+            if (isRateLimit(e)) return true
         }
 
-        // 3. Fallback: spróbuj tylko pierwszego członu nazwy (np. "Żywotnik")
+        // 3. Fallback: spróbuj tylko pierwszego członu nazwy
         val firstWord = cleanName.split(" ").firstOrNull()
         if (firstWord != null && firstWord != cleanName) {
-            val urlFirst = fetchWikiImage(firstWord, "https://pl.wikipedia.org/w/api.php")
-            if (urlFirst != null) {
-                Log.d("PlantRepository", "Found PL wiki image (first word) for $firstWord: $urlFirst")
-                db.plantDao().updateWikiImageUrl(plantId, urlFirst)
-                return
+            try {
+                val urlFirst = fetchWikiImage(firstWord, "https://pl.wikipedia.org/w/api.php")
+                if (urlFirst != null) {
+                    Log.d("PlantRepository", "SUCCESS: Found PL wiki image via first word ($firstWord) for $name")
+                    applyWikiImageUrl(urlFirst, firstWord, plantId, perenualId)
+                    return true
+                }
+            } catch (e: Exception) {
+                if (isRateLimit(e)) return true
             }
         }
 
-        // 4. Finalny fallback dla nazw typu "Porzeczka czerwona" -> szukaj "Porzeczka" w EN (Currant)
-        // Jeśli nazwa zawiera znane słowo, spróbuj przypisać generyczny odpowiednik
+        // 4. Finalny fallback dla nazw typu "Porzeczka czerwona" -> szukaj "Porzeczka" w EN
         val genericLatin = when {
             cleanName.contains("Porzeczka", true) -> "Ribes"
             cleanName.contains("Malina", true) -> "Rubus idaeus"
             cleanName.contains("Borówka", true) -> "Vaccinium"
             cleanName.contains("Wierzba", true) -> "Salix"
             cleanName.contains("Klon", true) -> "Acer"
+            cleanName.contains("Wiśnia", true) -> "Prunus cerasus"
+            cleanName.contains("Czereśnia", true) -> "Prunus avium"
+            cleanName.contains("Grusza", true) -> "Pyrus"
+            cleanName.contains("Śliwa", true) -> "Prunus domestica"
+            cleanName.contains("Jabłoń", true) -> "Malus domestica"
+            cleanName.contains("Aloes", true) -> "Aloe"
             else -> null
         }
         
         if (genericLatin != null) {
-            val urlGeneric = fetchWikiImage(genericLatin, "https://en.wikipedia.org/w/api.php")
-            if (urlGeneric != null) {
-                Log.d("PlantRepository", "Found EN wiki image (generic) for $genericLatin: $urlGeneric")
-                db.plantDao().updateWikiImageUrl(plantId, urlGeneric)
+            try {
+                val urlGeneric = fetchWikiImage(genericLatin, "https://en.wikipedia.org/w/api.php")
+                if (urlGeneric != null) {
+                    Log.d("PlantRepository", "SUCCESS: Found EN wiki image via Generic Latin ($genericLatin) for $name")
+                    applyWikiImageUrl(urlGeneric, genericLatin, plantId, perenualId)
+                    return true
+                }
+            } catch (e: Exception) {
+                if (isRateLimit(e)) return true
             }
         }
 
-        if (db.plantDao().getPlantById(plantId)?.wikiImageUrl == null) {
-            Log.d("PlantRepository", "No wiki image found for ${plant.name} after all attempts")
+        Log.w("PlantRepository", "FAILURE: No wiki image found for $name after all 4 stages.")
+        return false
+    }
+
+    private suspend fun applyWikiImageUrl(url: String, sourceName: String, plantId: Long?, perenualId: Int?) {
+        if (plantId != null) {
+            db.plantDao().updateWikiImageUrl(plantId, url)
+        }
+        if (perenualId != null && perenualId > 0) {
+            // Jeśli roślina nie istnieje w cache poradnika, musimy ją stworzyć
+            val existing = db.pruningGuideCacheDao().getById(perenualId)
+            if (existing != null) {
+                db.pruningGuideCacheDao().updateImageUrl(perenualId, url)
+            } else {
+                // Tworzymy uproszczony wpis cache tylko ze zdjęciem, aby UI go widziało
+                db.pruningGuideCacheDao().insert(
+                    com.example.pruningapp.data.PruningGuideCache(
+                        perenualId = perenualId,
+                        commonName = sourceName,
+                        pruningMonthsJson = "[]",
+                        frequency = null,
+                        maintenanceLevel = null,
+                        description = null,
+                        imageUrl = url,
+                        fetchedAt = System.currentTimeMillis()
+                    )
+                )
+            }
         }
     }
 
     private suspend fun fetchWikiImage(title: String, apiEndpoint: String): String? {
         Log.d("PlantRepository", "Fetching wiki image for: $title from $apiEndpoint")
-        return try {
-            val response = WikipediaApiService.instance.getPageImages(url = apiEndpoint, titles = title)
-            val imageUrl = response.query?.pages?.values
-                ?.firstOrNull { (it.pageId ?: -1) > 0 }
-                ?.thumbnail?.source
-            Log.d("PlantRepository", "Wiki response for $title: $imageUrl")
-            imageUrl
-        } catch (e: Exception) {
-            Log.e("PlantRepository", "Błąd pobierania obrazu z wiki ($title, $apiEndpoint): ${e.message}")
-            null
-        }
+        val response = WikipediaApiService.instance.getPageImages(url = apiEndpoint, titles = title)
+        val imageUrl = response.query?.pages?.values
+            ?.firstOrNull { (it.pageId ?: -1) > 0 }
+            ?.thumbnail?.source
+        Log.d("PlantRepository", "Wiki response for $title: $imageUrl")
+        return imageUrl
     }
 
     suspend fun replacePruningRulesAndTasks(

@@ -69,6 +69,9 @@ interface PlantDao {
     @Query("SELECT * FROM plants WHERE wikiImageUrl IS NULL")
     suspend fun getAllPlantsWithoutWikiImage(): List<Plant>
 
+    @Query("SELECT * FROM plants WHERE name = :name LIMIT 1")
+    suspend fun getPlantByName(name: String): Plant?
+
     @Query("""
         UPDATE plants
         SET apiDescription   = :description,

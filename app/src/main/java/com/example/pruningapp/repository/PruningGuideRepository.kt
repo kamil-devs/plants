@@ -31,7 +31,13 @@ class PruningGuideRepository(
     private val ttlMillis = 30L * 24 * 60 * 60 * 1000
 
     suspend fun getPruningGuide(perenualId: Int): PruningGuideResult {
-        // Włączamy mocki w trybie Debug, aby nie blokowały nas limity API podczas pracy nad UI
+        // W trybie Debug najpierw sprawdzamy cache (bo tam może być obraz z Wiki)
+        val cached = cacheDao.getById(perenualId)
+        if (cached != null && System.currentTimeMillis() - cached.fetchedAt < ttlMillis) {
+            return cached.toResult()
+        }
+
+        // Jeśli nie ma w cache, w trybie Debug próbujemy Mocków (tylko dla znanych ID)
         if (BuildConfig.DEBUG) {
             val mock = getMockData(perenualId)
             if (mock is PruningGuideResult.Success) return mock
@@ -39,11 +45,6 @@ class PruningGuideRepository(
 
         if (BuildConfig.PERENUAL_API_KEY.isBlank()) {
             return PruningGuideResult.Error("Brak klucza API Perenual")
-        }
-
-        val cached = cacheDao.getById(perenualId)
-        if (cached != null && System.currentTimeMillis() - cached.fetchedAt < ttlMillis) {
-            return cached.toResult()
         }
 
         return try {

@@ -22,6 +22,10 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     val allPlants: StateFlow<List<Plant>> = plantRepository.getAllPlants()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val pruningGuideCache: StateFlow<List<com.example.pruningapp.data.PruningGuideCache>> = 
+        plantRepository.getPruningGuideCache()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     suspend fun getPlantById(id: Long): Plant? = plantRepository.getPlantById(id)
 
     fun getPlantByIdFlow(id: Long): Flow<Plant?> = plantRepository.getPlantByIdFlow(id)

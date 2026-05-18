@@ -61,16 +61,20 @@ import coil.compose.AsyncImage
 import com.example.pruningapp.data.PerenualPlant
 import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.repository.PruningGuideResult
+import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.PruningGuideViewModel
 
 @Composable
 fun PerenualPlantDetailScreen(
     navController: NavController,
     perenualId: Int,
-    viewModel: PruningGuideViewModel = viewModel()
+    viewModel: PruningGuideViewModel = viewModel(),
+    plantViewModel: PlantViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val plant = remember(perenualId) { PlantDatabase.findById(perenualId) }
+    val plants by plantViewModel.allPlants.collectAsState()
+    val dbPlant = remember(perenualId) { PlantDatabase.findById(perenualId) }
+    val localPlant = plants.find { it.name.equals(dbPlant?.polishName, ignoreCase = true) }
 
     LaunchedEffect(perenualId) {
         viewModel.load(perenualId)
@@ -79,7 +83,7 @@ fun PerenualPlantDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(plant?.polishName ?: "Poradnik pielęgnacji") },
+                title = { Text(dbPlant?.polishName ?: "Poradnik pielęgnacji") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć")
@@ -99,11 +103,11 @@ fun PerenualPlantDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val s = state
-            if (plant != null) {
+            if (dbPlant != null) {
                 item { 
                     PlantHeaderSection(
-                        plant = plant, 
-                        imageUrl = (s as? PruningGuideResult.Success)?.imageUrl 
+                        plant = dbPlant, 
+                        imageUrl = localPlant?.wikiImageUrl ?: localPlant?.apiImageUrl ?: (s as? PruningGuideResult.Success)?.imageUrl
                     ) 
                 }
             }

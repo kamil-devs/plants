@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.*
 import com.example.pruningapp.data.AppDatabase
+import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.repository.PlantRepository
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
@@ -17,17 +18,30 @@ class WikipediaSyncWorker(
         val db = AppDatabase.getDatabase(applicationContext)
         val repo = PlantRepository(db)
 
-        val withoutImage = db.plantDao().getAllPlantsWithoutWikiImage()
-        Log.d("WikipediaSyncWorker", "Starting sync for ${withoutImage.size} plants")
-
-        for ((index, plant) in withoutImage.withIndex()) {
-            try {
+        // 1. Synchronizacja dla roślin w tabeli 'plants'
+        val plantsInTable = db.plantDao().getAllPlantsWithoutWikiImage()
+        Log.d("WikipediaSyncWorker", "Syncing images for ${plantsInTable.size} plants from local table")
+        for (plant in plantsInTable) {
+            val callMade = try {
                 repo.syncWikipediaImage(plant.id)
+            } catch (_: Exception) { false }
+            
+            if (callMade) delay(5000)
+        }
+
+        // 2. Synchronizacja dla bazy technicznej 'PlantDatabase'
+        val dbPlants = PlantDatabase.plants
+        Log.d("WikipediaSyncWorker", "Syncing images for ${dbPlants.size} species from PlantDatabase (Encyclopedia)")
+        
+        for (dbPlant in dbPlants) {
+            val callMade = try {
+                repo.syncWikipediaImageForEncyclopedia(dbPlant)
             } catch (e: Exception) {
-                Log.e("WikipediaSyncWorker", "Error for ${plant.name}: ${e.message}")
+                Log.e("WikipediaSyncWorker", "Error syncing ${dbPlant.polishName}: ${e.message}")
+                false
             }
-            // Wikipedia API jest wrażliwe na szybkie zapytania
-            if (index < withoutImage.lastIndex) delay(1500)
+            
+            if (callMade) delay(5000)
         }
 
         return Result.success()

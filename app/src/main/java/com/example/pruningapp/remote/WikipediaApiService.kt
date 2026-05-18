@@ -26,7 +26,7 @@ interface WikipediaApiService {
                 .addInterceptor { chain ->
                     chain.proceed(
                         chain.request().newBuilder()
-                            .header("User-Agent", "PruningApp/1.0 (Android; plant pruning calendar)")
+                            .header("User-Agent", "PruningApp/1.0 (https://github.com/example/plants; contact@example.com) Android")
                             .build()
                     )
                 }
