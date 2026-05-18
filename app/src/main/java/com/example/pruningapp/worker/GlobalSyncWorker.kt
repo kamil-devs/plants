@@ -14,7 +14,6 @@ import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.repository.PlantRepository
 import kotlinx.coroutines.delay
-import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 class GlobalSyncWorker(
