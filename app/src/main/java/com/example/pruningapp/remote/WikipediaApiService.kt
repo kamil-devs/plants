@@ -5,11 +5,13 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
+import retrofit2.http.Url
 
 interface WikipediaApiService {
 
-    @GET("w/api.php")
+    @GET
     suspend fun getPageImages(
+        @Url url: String,
         @Query("action") action: String = "query",
         @Query("titles") titles: String,
         @Query("prop") prop: String = "pageimages",

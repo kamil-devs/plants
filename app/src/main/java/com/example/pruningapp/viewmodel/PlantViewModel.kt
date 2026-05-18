@@ -8,6 +8,7 @@ import com.example.pruningapp.data.Plant
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.repository.PlantRepository
 import com.example.pruningapp.worker.GlobalSyncWorker
+import com.example.pruningapp.worker.WikipediaSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,8 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     owned = true
                 )
             )
+            GlobalSyncWorker.enqueue(getApplication())
+            WikipediaSyncWorker.enqueue(getApplication())
         }
     }
 

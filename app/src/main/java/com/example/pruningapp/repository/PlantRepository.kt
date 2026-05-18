@@ -43,23 +43,83 @@ class PlantRepository(
     suspend fun getPruningRules(plantId: Long): List<PruningRule> =
         db.plantDao().getPruningRulesForPlant(plantId)
 
-    suspend fun insertPruningRule(rule: PruningRule) = db.plantDao().insertPruningRule(rule)
-
-    suspend fun getAllPruningRules(): List<PruningRule> = db.plantDao().getAllPruningRules()
-
-    suspend fun getPlantCount(): Int = db.plantDao().getPlantCount()
-
     suspend fun syncWikipediaImage(plantId: Long) {
         val plant = db.plantDao().getPlantById(plantId) ?: return
         if (!plant.wikiImageUrl.isNullOrBlank()) return
-        val latinName = PlantDatabase.plants.find { it.polishName == plant.name }?.latinName ?: return
-        try {
-            val response = WikipediaApiService.instance.getPageImages(titles = latinName)
+
+        val dbEntry = PlantDatabase.plants.find { it.polishName.equals(plant.name, ignoreCase = true) }
+        val latinName = dbEntry?.latinName
+
+        Log.d("PlantRepository", "Syncing wiki image for ${plant.name}. Latin name found in DB: $latinName")
+
+        // 1. Spróbuj łacińskiej nazwy na angielskiej Wikipedii
+        if (latinName != null) {
+            val url = fetchWikiImage(latinName, "https://en.wikipedia.org/w/api.php")
+            if (url != null) {
+                Log.d("PlantRepository", "Found EN wiki image using Latin name ($latinName) for ${plant.name}: $url")
+                db.plantDao().updateWikiImageUrl(plantId, url)
+                return
+            }
+        }
+
+        // 2. Spróbuj polskiej nazwy na polskiej Wikipedii
+        // Najpierw pełna nazwa (ale bez nawiasów, np. "Żywotnik (tuja)" -> "Żywotnik tuja")
+        val cleanName = plant.name.replace("(", "").replace(")", "").trim()
+        val urlPl = fetchWikiImage(cleanName, "https://pl.wikipedia.org/w/api.php")
+        if (urlPl != null) {
+            Log.d("PlantRepository", "Found PL wiki image for $cleanName: $urlPl")
+            db.plantDao().updateWikiImageUrl(plantId, urlPl)
+            return
+        }
+
+        // 3. Fallback: spróbuj tylko pierwszego członu nazwy (np. "Żywotnik")
+        val firstWord = cleanName.split(" ").firstOrNull()
+        if (firstWord != null && firstWord != cleanName) {
+            val urlFirst = fetchWikiImage(firstWord, "https://pl.wikipedia.org/w/api.php")
+            if (urlFirst != null) {
+                Log.d("PlantRepository", "Found PL wiki image (first word) for $firstWord: $urlFirst")
+                db.plantDao().updateWikiImageUrl(plantId, urlFirst)
+                return
+            }
+        }
+
+        // 4. Finalny fallback dla nazw typu "Porzeczka czerwona" -> szukaj "Porzeczka" w EN (Currant)
+        // Jeśli nazwa zawiera znane słowo, spróbuj przypisać generyczny odpowiednik
+        val genericLatin = when {
+            cleanName.contains("Porzeczka", true) -> "Ribes"
+            cleanName.contains("Malina", true) -> "Rubus idaeus"
+            cleanName.contains("Borówka", true) -> "Vaccinium"
+            cleanName.contains("Wierzba", true) -> "Salix"
+            cleanName.contains("Klon", true) -> "Acer"
+            else -> null
+        }
+        
+        if (genericLatin != null) {
+            val urlGeneric = fetchWikiImage(genericLatin, "https://en.wikipedia.org/w/api.php")
+            if (urlGeneric != null) {
+                Log.d("PlantRepository", "Found EN wiki image (generic) for $genericLatin: $urlGeneric")
+                db.plantDao().updateWikiImageUrl(plantId, urlGeneric)
+            }
+        }
+
+        if (db.plantDao().getPlantById(plantId)?.wikiImageUrl == null) {
+            Log.d("PlantRepository", "No wiki image found for ${plant.name} after all attempts")
+        }
+    }
+
+    private suspend fun fetchWikiImage(title: String, apiEndpoint: String): String? {
+        Log.d("PlantRepository", "Fetching wiki image for: $title from $apiEndpoint")
+        return try {
+            val response = WikipediaApiService.instance.getPageImages(url = apiEndpoint, titles = title)
             val imageUrl = response.query?.pages?.values
                 ?.firstOrNull { (it.pageId ?: -1) > 0 }
-                ?.thumbnail?.source ?: return
-            db.plantDao().updateWikiImageUrl(plantId, imageUrl)
-        } catch (_: Exception) { }
+                ?.thumbnail?.source
+            Log.d("PlantRepository", "Wiki response for $title: $imageUrl")
+            imageUrl
+        } catch (e: Exception) {
+            Log.e("PlantRepository", "Błąd pobierania obrazu z wiki ($title, $apiEndpoint): ${e.message}")
+            null
+        }
     }
 
     suspend fun replacePruningRulesAndTasks(
@@ -91,7 +151,7 @@ class PlantRepository(
                             status = "pending"
                         )
                     )
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Pomiń nieprawidłowy format daty
                 }
             }

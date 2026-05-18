@@ -66,8 +66,8 @@ interface PlantDao {
     @Query("UPDATE plants SET wikiImageUrl = :url WHERE id = :id")
     suspend fun updateWikiImageUrl(id: Long, url: String)
 
-    @Query("SELECT * FROM plants WHERE owned = 1 AND wikiImageUrl IS NULL")
-    suspend fun getOwnedPlantsWithoutWikiImage(): List<Plant>
+    @Query("SELECT * FROM plants WHERE wikiImageUrl IS NULL")
+    suspend fun getAllPlantsWithoutWikiImage(): List<Plant>
 
     @Query("""
         UPDATE plants

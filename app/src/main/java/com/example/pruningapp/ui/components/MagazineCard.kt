@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -32,11 +33,14 @@ fun MagazineCard(
     imageUrl: String?,
     owned: Boolean = false,
     pinned: Boolean = false,
-    syncPending: Boolean = false, // Nowe: informacja o trwającej synchronizacji
+    syncPending: Boolean = false,
     onClick: () -> Unit,
     onToggleOwned: (() -> Unit)? = null,
     onTogglePinned: (() -> Unit)? = null
 ) {
+    // Zapamiętujemy URL obrazu, aby wymusić odświeżenie Coil przy zmianie
+    val currentImageUrl = remember(imageUrl) { imageUrl }
+
     Card(
         onClick = onClick,
         modifier = Modifier
@@ -49,12 +53,11 @@ fun MagazineCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
-                model = imageUrl.takeIf { !it.isNullOrBlank() },
+                model = currentImageUrl.takeIf { !it.isNullOrBlank() },
                 contentDescription = title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                loading = { CardImagePlaceholder() },
-                error = { CardImagePlaceholder() }
+                loading = { CardImagePlaceholder() }
             )
 
             // Overlay

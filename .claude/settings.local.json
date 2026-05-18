@@ -12,7 +12,8 @@
       "Bash(./gradlew assembleDebug)",
       "Bash(del *)",
       "Bash(git commit *)",
-      "Bash(Remove-Item *)"
+      "Bash(Remove-Item *)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug 2>&1\")"
     ]
   }
 }
