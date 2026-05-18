@@ -1,6 +1,5 @@
 package com.example.pruningapp.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,8 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -90,32 +87,26 @@ fun DashboardScreen(
         }
     }
 
-    val month = today.monthValue
-    val seasonColors = remember(month) {
-        when (month) {
-            12, 1, 2 -> listOf(Color(0xFFB8CCE0), Color(0xFFDAEAF5), Color(0xFFF7F3EE))
-            3, 4, 5  -> listOf(Color(0xFF9DC87A), Color(0xFFD0E8BB), Color(0xFFF7F3EE))
-            6, 7, 8  -> listOf(Color(0xFFD4A832), Color(0xFFEDD98A), Color(0xFFF7F3EE))
-            else     -> listOf(Color(0xFFC4622D), Color(0xFFFFDBCC), Color(0xFFF7F3EE))
-        }
-    }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Seasonal hero header
+        // Hero header card
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.verticalGradient(seasonColors))
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = 28.dp)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 16.dp, bottom = 28.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
@@ -131,7 +122,7 @@ fun DashboardScreen(
                             text = stringResource(greeting),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -151,14 +142,14 @@ fun DashboardScreen(
                             Icon(
                                 Icons.Default.BarChart,
                                 contentDescription = stringResource(R.string.cd_stats),
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                         IconButton(onClick = { navController.navigate("settings") }) {
                             Icon(
                                 Icons.Default.Settings,
                                 contentDescription = stringResource(R.string.cd_settings),
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -168,21 +159,18 @@ fun DashboardScreen(
 
         weather?.let { current ->
             item {
-                Spacer(Modifier.height(12.dp))
                 if (current.hasWarning) WeatherWarningCard(current)
                 else WeatherInfoCard(current)
             }
         }
 
         item {
-            Spacer(Modifier.height(12.dp))
             Text(
                 text = stringResource(R.string.dashboard_upcoming_pruning),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            Spacer(Modifier.height(8.dp))
         }
 
         when {
@@ -222,8 +210,8 @@ fun DashboardScreen(
 private fun HeroStatBadge(value: String, label: String, highlight: Boolean = false) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+        color = if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                else MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
         tonalElevation = 0.dp
     ) {
         Column(
@@ -235,12 +223,12 @@ private fun HeroStatBadge(value: String, label: String, highlight: Boolean = fal
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = if (highlight) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.65f)
             )
         }
     }
