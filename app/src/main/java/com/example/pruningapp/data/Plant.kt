@@ -21,6 +21,7 @@ data class Plant(
     val apiDescription: String? = null,
     val apiWatering: String? = null,
     val apiMaintenance: String? = null,
+    val apiSunlight: String? = null,
     val apiImageUrl: String? = null,
     val apiDataSynced: Boolean = false
 )

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -371,10 +373,22 @@ fun PlantDetailScreen(
                                     }
                                 }
 
+                                if (!currentPlant.apiSunlight.isNullOrBlank()) {
+                                    ApiChip(
+                                        label = "Nasłonecznienie",
+                                        value = currentPlant.apiSunlight
+                                            .split(", ")
+                                            .joinToString(", ") { translateSunlight(it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        icon = Icons.Default.WbSunny
+                                    )
+                                }
+
                                 if (!currentPlant.apiDescription.isNullOrBlank()) {
-                                    if (!currentPlant.apiWatering.isNullOrBlank()
+                                    val hasChips = !currentPlant.apiWatering.isNullOrBlank()
                                         || !currentPlant.apiMaintenance.isNullOrBlank()
-                                    ) {
+                                        || !currentPlant.apiSunlight.isNullOrBlank()
+                                    if (hasChips) {
                                         HorizontalDivider(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
                                         )
@@ -409,7 +423,12 @@ fun PlantDetailScreen(
 }
 
 @Composable
-private fun ApiChip(label: String, value: String, modifier: Modifier = Modifier) {
+private fun ApiChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null
+) {
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
@@ -420,11 +439,24 @@ private fun ApiChip(label: String, value: String, modifier: Modifier = Modifier)
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
@@ -494,4 +526,14 @@ private fun translateMaintenance(value: String): String = when (value.lowercase(
     "moderate" -> "Umiarkowana"
     "high"     -> "Wysoka"
     else       -> value
+}
+
+private fun translateSunlight(value: String): String = when (value.lowercase().trim()) {
+    "full sun"                -> "Pełne słońce"
+    "part shade"              -> "Półcień"
+    "full shade"              -> "Głęboki cień"
+    "part sun/part shade"     -> "Słoneczno-półcień"
+    "sun-exposed"             -> "Nasłonecznione"
+    "filtered indirect light" -> "Filtrowane światło"
+    else                      -> value
 }

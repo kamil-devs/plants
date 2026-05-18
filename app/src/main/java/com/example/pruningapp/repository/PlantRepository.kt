@@ -112,11 +112,13 @@ class PlantRepository(
         try {
             val details = api.getSpeciesDetails(perenualId, BuildConfig.PERENUAL_API_KEY)
             val imageUrl = details.defaultImage?.regularUrl ?: details.defaultImage?.mediumUrl
+            val sunlight = details.sunlight?.joinToString(", ")
             db.plantDao().updateApiData(
                 id = plantId,
                 description = details.description,
                 watering = details.watering,
                 maintenance = details.maintenance,
+                sunlight = sunlight,
                 imageUrl = imageUrl
             )
         } catch (e: HttpException) {
@@ -133,28 +135,29 @@ class PlantRepository(
             val description: String,
             val watering: String,
             val maintenance: String,
+            val sunlight: String,
             val imageUrl: String
         )
 
         val mock = when (perenualId) {
             4892 -> MockData(
                 "Jabłonie wymagają regularnego cięcia, aby zachować zdrowie i wysoką jakość owoców. Najlepszym czasem jest późna zima lub wczesna wiosna, przed rozpoczęciem wegetacji.",
-                "Average", "moderate",
+                "Average", "moderate", "Full sun",
                 "https://perenual.com/storage/species_image/4892_malus_domestica/regular/malus_domestica.jpg"
             )
             7342 -> MockData(
                 "Róże przycinamy zazwyczaj wiosną, gdy pąki zaczynają nabrzmiewać. Usuwamy martwe i chore pędy, aby pobudzić roślinę do kwitnienia.",
-                "Average", "high",
+                "Average", "high", "Full sun, Part shade",
                 "https://perenual.com/storage/species_image/7342_rosa/regular/rosa.jpg"
             )
             3919 -> MockData(
                 "Lawendę przycinamy po kwitnieniu (późnym latem), aby zachować zwarty pokrój krzewu. Można również wykonać lekkie cięcie formujące wiosną.",
-                "Minimum", "low",
+                "Minimum", "low", "Full sun",
                 "https://perenual.com/storage/species_image/3919_lavandula_angustifolia/regular/lavandula_angustifolia.jpg"
             )
             5243 -> MockData(
                 "Monstera nie wymaga regularnego przycinania. Usuwamy jedynie uschnięte liście lub skracamy zbyt długie pędy, jeśli roślina zajmuje za dużo miejsca.",
-                "Average", "low",
+                "Average", "low", "Part shade, Filtered Indirect Light",
                 "https://perenual.com/storage/species_image/5243_monstera_deliciosa/regular/monstera_deliciosa.jpg"
             )
             else -> return
@@ -165,6 +168,7 @@ class PlantRepository(
             description = mock.description,
             watering = mock.watering,
             maintenance = mock.maintenance,
+            sunlight = mock.sunlight,
             imageUrl = mock.imageUrl
         )
     }

@@ -68,6 +68,7 @@ interface PlantDao {
         SET apiDescription = :description,
             apiWatering    = :watering,
             apiMaintenance = :maintenance,
+            apiSunlight    = :sunlight,
             apiImageUrl    = :imageUrl,
             apiDataSynced  = 1
         WHERE id = :id
@@ -77,6 +78,7 @@ interface PlantDao {
         description: String?,
         watering: String?,
         maintenance: String?,
+        sunlight: String?,
         imageUrl: String?
     )
 }
