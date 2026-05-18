@@ -108,12 +108,14 @@ fun PlantDetailScreen(
                             .height(200.dp)
                     ) {
                         val heroImageUrl = currentPlant.wikiImageUrl ?: currentPlant.apiImageUrl
-                        if (!heroImageUrl.isNullOrBlank()) {
+                        var heroError by remember(heroImageUrl) { mutableStateOf(false) }
+                        if (!heroImageUrl.isNullOrBlank() && !heroError) {
                             AsyncImage(
                                 model = heroImageUrl,
                                 contentDescription = currentPlant.name,
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                onError = { heroError = true }
                             )
                             Box(
                                 modifier = Modifier

@@ -11,6 +11,10 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -47,14 +51,16 @@ fun MagazineCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
+        var imageError by remember(imageUrl) { mutableStateOf(false) }
+
         Box(modifier = Modifier.fillMaxSize()) {
-            // ... (Image logic)
-            if (imageUrl != null) {
+            if (!imageUrl.isNullOrBlank() && !imageError) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = title,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    onError = { imageError = true }
                 )
             } else {
                 Box(
