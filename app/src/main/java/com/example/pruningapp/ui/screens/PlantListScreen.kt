@@ -240,8 +240,8 @@ fun PlantListScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp)
                     ) {
                         gridItems(sortedPlants, key = { it.id }) { plant ->
@@ -249,9 +249,13 @@ fun PlantListScreen(
                                 title = plant.name,
                                 subtitle = plant.categoryLabel(),
                                 category = plant.categoryLabel(),
-                                imageUrl = null,
+                                imageUrl = plant.apiImageUrl,
+                                owned = plant.owned,
+                                pinned = plant.pinned,
+                                syncPending = plant.hasPendingSync(),
                                 onClick = { navController.navigate("plant_detail/${plant.id}") },
-                                syncPending = plant.hasPendingSync()
+                                onToggleOwned = { plantViewModel.toggleOwned(plant) },
+                                onTogglePinned = { plantViewModel.togglePinned(plant) }
                             )
                         }
                     }

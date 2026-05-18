@@ -1,26 +1,15 @@
 package com.example.pruningapp.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,21 +31,26 @@ fun MagazineCard(
     subtitle: String,
     category: String,
     imageUrl: String?,
+    owned: Boolean = false,
+    pinned: Boolean = false,
+    syncPending: Boolean = false, // Nowe: informacja o trwającej synchronizacji
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    cardHeight: androidx.compose.ui.unit.Dp = 200.dp,
-    syncPending: Boolean = false
+    onToggleOwned: (() -> Unit)? = null,
+    onTogglePinned: (() -> Unit)? = null
 ) {
-    val cardShape = RoundedCornerShape(24.dp)
-
     Card(
         onClick = onClick,
-        modifier = modifier.height(cardHeight),
-        shape = cardShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (!imageUrl.isNullOrBlank()) {
+            // ... (Image logic)
+            if (imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = title,
@@ -66,104 +62,141 @@ fun MagazineCard(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            Brush.linearGradient(
+                            Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF2D5A27),
-                                    Color(0xFF558B2F),
-                                    Color(0xFF81C784)
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.secondaryContainer
                                 )
                             )
-                        )
-                )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Eco,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                }
             }
 
-            // Gradient overlay — dark at bottom for text legibility
+            // Overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colorStops = arrayOf(
-                                0.0f to Color.Transparent,
-                                0.45f to Color.Transparent,
-                                1.0f to Color(0xCC000000)
-                            )
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            startY = 350f
                         )
                     )
             )
 
-            if (syncPending) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xCC000000)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Sync,
-                        contentDescription = "Oczekuje na synchronizacje",
-                        tint = Color.White,
-                        modifier = Modifier.size(15.dp)
+            // Top Actions
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (syncPending) {
+                    Surface(
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.5f),
+                        contentColor = Color.White
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = "Synchronizacja...",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+                if (onTogglePinned != null) {
+                    ActionCircleButton(
+                        icon = Icons.Default.PushPin,
+                        active = pinned,
+                        activeColor = Color(0xFFFFC107),
+                        onClick = onTogglePinned
+                    )
+                }
+                if (onToggleOwned != null) {
+                    ActionCircleButton(
+                        icon = Icons.Default.Check,
+                        active = owned,
+                        activeColor = MaterialTheme.colorScheme.primary,
+                        onClick = onToggleOwned
                     )
                 }
             }
 
-            // Glassmorphism text overlay
-            Box(
+            // Category Badge (Top Left)
+            Surface(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .align(Alignment.TopStart),
+                shape = RoundedCornerShape(50),
+                color = Color.Black.copy(alpha = 0.4f),
+                contentColor = Color.White
+            ) {
+                Text(
+                    text = category,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp
+                )
+            }
+
+            // Content (Bottom)
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                Column {
-                    CategoryPill(category)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        color = Color.White.copy(alpha = 0.75f)
-                    )
-                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontStyle = FontStyle.Italic,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CategoryPill(category: String) {
-    val pillColor = when (category) {
-        "Owocowe"   -> Color(0xCC2D5A27)
-        "Warzywa",
-        "Zioła"     -> Color(0xCC558B2F)
-        "Ozdobne"   -> Color(0xCC1565C0)
-        "Doniczkowe"-> Color(0xCC6A1B9A)
-        else        -> Color(0xCC424242)
-    }
+private fun ActionCircleButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    active: Boolean,
+    activeColor: Color,
+    onClick: () -> Unit
+) {
     Surface(
-        shape = RoundedCornerShape(50),
-        color = pillColor,
-        modifier = Modifier.border(
-            width = 0.5.dp,
-            color = Color.White.copy(alpha = 0.35f),
-            shape = RoundedCornerShape(50)
-        )
+        onClick = onClick,
+        modifier = Modifier.size(32.dp),
+        shape = CircleShape,
+        color = if (active) activeColor else Color.Black.copy(alpha = 0.3f),
+        contentColor = Color.White
     ) {
-        Text(
-            text = category,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.White
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
 }
