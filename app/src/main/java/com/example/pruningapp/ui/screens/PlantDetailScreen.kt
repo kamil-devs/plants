@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.util.BotanicalTranslator
 import com.example.pruningapp.viewmodel.PlantViewModel
@@ -108,14 +108,13 @@ fun PlantDetailScreen(
                             .height(200.dp)
                     ) {
                         val heroImageUrl = currentPlant.wikiImageUrl ?: currentPlant.apiImageUrl
-                        var heroError by remember(heroImageUrl) { mutableStateOf(false) }
-                        if (!heroImageUrl.isNullOrBlank() && !heroError) {
-                            AsyncImage(
+                        if (!heroImageUrl.isNullOrBlank()) {
+                            SubcomposeAsyncImage(
                                 model = heroImageUrl,
                                 contentDescription = currentPlant.name,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
-                                onError = { heroError = true }
+                                error = { HeroPlaceholder() }
                             )
                             Box(
                                 modifier = Modifier
@@ -423,6 +422,19 @@ fun PlantDetailScreen(
             }
         }
     }
+}
+
+@Composable
+private fun HeroPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF1B5E20), Color(0xFF2D5A27), Color(0xFF4CAF50))
+                )
+            )
+    )
 }
 
 @Composable
