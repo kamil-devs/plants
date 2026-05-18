@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,10 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -81,6 +85,11 @@ fun PlantDetailScreen(
                 }.getOrDefault(emptyList())
             }
 
+            val syncPending = currentPlant.owned
+                && !currentPlant.apiDataSynced
+                && (currentPlant.perenualId != null
+                    || PlantDatabase.plants.any { it.polishName == currentPlant.name })
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -88,31 +97,51 @@ fun PlantDetailScreen(
                 contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Gradient hero header
+                // Hero: API image jeśli dostępne, inaczej gradient
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFF1B5E20),
-                                        Color(0xFF2D5A27),
-                                        Color(0xFF4CAF50)
-                                    )
-                                )
-                            )
+                            .height(200.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Eco,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(120.dp)
-                                .align(Alignment.CenterEnd)
-                                .padding(end = 24.dp),
-                            tint = Color.White.copy(alpha = 0.12f)
-                        )
+                        if (!currentPlant.apiImageUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = currentPlant.apiImageUrl,
+                                contentDescription = currentPlant.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            0f to Color.Transparent,
+                                            0.5f to Color.Transparent,
+                                            1f to Color(0xCC000000)
+                                        )
+                                    )
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(Color(0xFF1B5E20), Color(0xFF2D5A27), Color(0xFF4CAF50))
+                                        )
+                                    )
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Eco,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 24.dp),
+                                tint = Color.White.copy(alpha = 0.12f)
+                            )
+                        }
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
@@ -128,6 +157,31 @@ fun PlantDetailScreen(
                                 text = currentPlant.type.replaceFirstChar { it.uppercase() },
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Color.White.copy(alpha = 0.78f)
+                            )
+                        }
+                    }
+                }
+
+                // Sync status — widoczny gdy dane są pobierane w tle
+                if (syncPending) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Sync,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                "Pobieranie danych pielęgnacyjnych w tle...",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -269,6 +323,79 @@ fun PlantDetailScreen(
                         }
                     }
                 }
+
+                // Sekcja danych z Perenual API (lokalnie zapisane)
+                if (currentPlant.apiDataSynced) {
+                    item {
+                        Text(
+                            "Pielęgnacja (Perenual)",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                if (!currentPlant.apiWatering.isNullOrBlank()
+                                    || !currentPlant.apiMaintenance.isNullOrBlank()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        if (!currentPlant.apiWatering.isNullOrBlank()) {
+                                            ApiChip(
+                                                label = "Podlewanie",
+                                                value = translateWatering(currentPlant.apiWatering),
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                        if (!currentPlant.apiMaintenance.isNullOrBlank()) {
+                                            ApiChip(
+                                                label = "Pielęgnacja",
+                                                value = translateMaintenance(currentPlant.apiMaintenance),
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (!currentPlant.apiDescription.isNullOrBlank()) {
+                                    if (!currentPlant.apiWatering.isNullOrBlank()
+                                        || !currentPlant.apiMaintenance.isNullOrBlank()
+                                    ) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
+                                        )
+                                    }
+                                    Text(
+                                        text = currentPlant.apiDescription,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                Text(
+                                    text = "Źródło: perenual.com",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontStyle = FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         } else {
             Box(
@@ -282,6 +409,33 @@ fun PlantDetailScreen(
 }
 
 @Composable
+private fun ApiChip(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
 private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
     Row(
         modifier = Modifier
@@ -289,7 +443,6 @@ private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Timeline track: circle + vertical line
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.width(28.dp)
@@ -317,7 +470,6 @@ private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
                 )
             }
         }
-
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
@@ -327,4 +479,19 @@ private fun TimelineStep(number: Int, text: String, isLast: Boolean) {
                 .padding(bottom = if (isLast) 8.dp else 16.dp)
         )
     }
+}
+
+private fun translateWatering(value: String): String = when (value.lowercase()) {
+    "minimum"   -> "Minimalne"
+    "average"   -> "Umiarkowane"
+    "frequent"  -> "Częste"
+    "maximum"   -> "Intensywne"
+    else        -> value
+}
+
+private fun translateMaintenance(value: String): String = when (value.lowercase()) {
+    "low"      -> "Niska"
+    "moderate" -> "Umiarkowana"
+    "high"     -> "Wysoka"
+    else       -> value
 }

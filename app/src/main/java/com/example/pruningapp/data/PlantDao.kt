@@ -56,4 +56,24 @@ interface PlantDao {
 
     @Query("SELECT COUNT(*) FROM plants WHERE isUserAdded = 1")
     fun getUserAddedPlantCountFlow(): Flow<Int>
+
+    @Query("UPDATE plants SET perenualId = :perenualId WHERE id = :id")
+    suspend fun setPerenualId(id: Long, perenualId: Int)
+
+    @Query("""
+        UPDATE plants
+        SET apiDescription = :description,
+            apiWatering    = :watering,
+            apiMaintenance = :maintenance,
+            apiImageUrl    = :imageUrl,
+            apiDataSynced  = 1
+        WHERE id = :id
+    """)
+    suspend fun updateApiData(
+        id: Long,
+        description: String?,
+        watering: String?,
+        maintenance: String?,
+        imageUrl: String?
+    )
 }

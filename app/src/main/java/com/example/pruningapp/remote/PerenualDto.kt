@@ -8,6 +8,7 @@ data class SpeciesDetails(
     @SerializedName("scientific_name") val scientificName: List<String>?,
     @SerializedName("pruning_month") val pruningMonth: List<String>?,
     @SerializedName("pruning_count") val pruningCount: PruningCount?,
+    @SerializedName("watering") val watering: String?,
     @SerializedName("maintenance") val maintenance: String?,
     @SerializedName("description") val description: String?,
     @SerializedName("default_image") val defaultImage: DefaultImage?

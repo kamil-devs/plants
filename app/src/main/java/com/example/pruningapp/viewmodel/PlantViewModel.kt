@@ -3,10 +3,14 @@ package com.example.pruningapp.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
 import com.example.pruningapp.App
 import com.example.pruningapp.data.Plant
+import com.example.pruningapp.data.PlantDatabase
 import com.example.pruningapp.data.PruningRule
 import com.example.pruningapp.repository.PlantRepository
+import com.example.pruningapp.worker.PerenualSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +36,15 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleOwned(plant: Plant) {
         viewModelScope.launch {
-            plantRepository.setOwned(plant.id, !plant.owned)
+            val nowOwned = !plant.owned
+            plantRepository.setOwned(plant.id, nowOwned)
+            if (nowOwned && !plant.apiDataSynced) {
+                val hasPerenualMapping = plant.perenualId != null
+                    || PlantDatabase.plants.any { it.polishName == plant.name }
+                if (hasPerenualMapping) {
+                    enqueuePerenualSync(plant.id)
+                }
+            }
         }
     }
 
@@ -44,7 +56,9 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addPlant(name: String, type: String) {
         viewModelScope.launch {
-            plantRepository.insertPlant(Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true))
+            plantRepository.insertPlant(
+                Plant(name = name, type = type, instructions = "[]", isUserAdded = true, owned = true)
+            )
         }
     }
 
@@ -72,5 +86,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             plantRepository.updatePlant(updated)
             plantRepository.replacePruningRulesAndTasks(plantId, rules)
         }
+    }
+
+    private fun enqueuePerenualSync(plantId: Long) {
+        WorkManager.getInstance(getApplication())
+            .enqueueUniqueWork(
+                "perenual_sync_$plantId",
+                ExistingWorkPolicy.KEEP,
+                PerenualSyncWorker.buildRequest(plantId)
+            )
     }
 }

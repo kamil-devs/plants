@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Plant::class, PruningRule::class, Task::class, Collection::class, PlantCollectionCrossRef::class, PruningGuideCache::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -80,6 +80,17 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE plants ADD COLUMN perenualId INTEGER")
+                database.execSQL("ALTER TABLE plants ADD COLUMN apiDescription TEXT")
+                database.execSQL("ALTER TABLE plants ADD COLUMN apiWatering TEXT")
+                database.execSQL("ALTER TABLE plants ADD COLUMN apiMaintenance TEXT")
+                database.execSQL("ALTER TABLE plants ADD COLUMN apiImageUrl TEXT")
+                database.execSQL("ALTER TABLE plants ADD COLUMN apiDataSynced INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -87,7 +98,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "plant_pruning_db"
                 )
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

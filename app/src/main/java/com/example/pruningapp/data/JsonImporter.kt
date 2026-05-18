@@ -20,13 +20,15 @@ class JsonImporter(
         val plants: List<PlantJson> = gson.fromJson(json, type)
 
         plants.forEach { plantJson ->
+            val perenualId = PlantDatabase.plants.find { it.polishName == plantJson.name }?.perenualId
             val plant = Plant(
                 name = plantJson.name,
                 type = plantJson.type,
                 instructions = gson.toJson(plantJson.instructions),
                 harvestStart = plantJson.harvest?.start,
                 harvestEnd = plantJson.harvest?.end,
-                harvestAppearance = plantJson.harvest?.appearance
+                harvestAppearance = plantJson.harvest?.appearance,
+                perenualId = perenualId
             )
             val plantId = db.plantDao().insertPlant(plant)
 
