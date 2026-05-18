@@ -61,7 +61,7 @@ class GlobalSyncWorker(
 
         fun enqueue(context: Context) {
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.KEEP, buildRequest())
+                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, buildRequest())
         }
 
         private fun buildRequest(): OneTimeWorkRequest =

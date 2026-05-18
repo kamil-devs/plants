@@ -1,5 +1,6 @@
 package com.example.pruningapp.remote
 
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -13,14 +14,25 @@ interface WikipediaApiService {
         @Query("titles") titles: String,
         @Query("prop") prop: String = "pageimages",
         @Query("format") format: String = "json",
-        @Query("pithumbsize") thumbSize: Int = 600,
+        @Query("pithumbsize") thumbSize: Int = 500,
         @Query("redirects") redirects: Int = 1
     ): WikipediaResponse
 
     companion object {
         val instance: WikipediaApiService by lazy {
+            val client = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    chain.proceed(
+                        chain.request().newBuilder()
+                            .header("User-Agent", "PruningApp/1.0 (Android; plant pruning calendar)")
+                            .build()
+                    )
+                }
+                .build()
+
             Retrofit.Builder()
                 .baseUrl("https://en.wikipedia.org/")
+                .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(WikipediaApiService::class.java)
