@@ -13,7 +13,17 @@
       "Bash(del *)",
       "Bash(git commit *)",
       "Bash(Remove-Item *)",
-      "Bash(cmd.exe /c \"gradlew.bat assembleDebug 2>&1\")"
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug 2>&1\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "PowerShell(head *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(git *)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 100)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat test 2>&1 | Select-Object -Last 40)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat compileDebugKotlin 2>&1 | Select-Object -Last 40)"
     ]
   }
 }

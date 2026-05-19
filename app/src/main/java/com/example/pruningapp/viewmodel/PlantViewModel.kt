@@ -8,8 +8,6 @@ import com.example.pruningapp.data.EncyclopediaSpecies
 import com.example.pruningapp.data.Plant
 import com.example.pruningapp.data.PruningGuideCache
 import com.example.pruningapp.data.PruningRule
-import com.example.pruningapp.network.WikipediaImageProviderImpl
-import com.example.pruningapp.repository.PlantRepository
 import com.example.pruningapp.worker.GlobalSyncWorker
 import com.example.pruningapp.worker.WikipediaSyncWorker
 import kotlinx.coroutines.flow.Flow
@@ -20,11 +18,9 @@ import kotlinx.coroutines.launch
 
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val db = (application as App).database
-    private val plantRepository = PlantRepository(
-        db = db,
-        wikiImageProvider = WikipediaImageProviderImpl.create(application)
-    )
+    private val app = application as App
+    private val plantRepository = app.plantRepository
+    private val db = app.database
 
     val allPlants: StateFlow<List<Plant>> = plantRepository.getAllPlants()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -33,7 +29,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         plantRepository.getPruningGuideCache()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    // Reaktywny katalog encyklopedii — zastępuje statyczny PlantDatabase.plants.
     val encyclopediaSpecies: StateFlow<List<EncyclopediaSpecies>> =
         db.encyclopediaSpeciesDao().getAllFlow()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

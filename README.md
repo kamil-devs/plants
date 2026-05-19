@@ -52,7 +52,7 @@ Or use the Android Studio Run button to deploy to a connected device/emulator.
 ```
 app/src/main/java/com/example/pruningapp/
   data/          Room entities, DAOs, AppDatabase, importers, DataStore prefs
-  domain/        Interfaces (WikipediaImageProvider, Mapper)
+  domain/        Interfaces (e.g. WikipediaImageProvider)
   network/       WikipediaImageProviderImpl
   remote/        Retrofit API services + DTOs (Perenual, Wikipedia, Weather)
   repository/    PlantRepository, TaskRepository, CollectionRepository, ...
@@ -74,7 +74,11 @@ app/src/main/java/com/example/pruningapp/
 
 ## Architecture notes
 
-- No Hilt — dependencies are wired manually through `App`-level lazy vals
+- No Hilt — dependencies are wired through `App`-level lazy repositories (`plantRepository`, `taskRepository`, etc.)
+- `TaskRefreshWorker` extends pruning tasks into the next calendar year (daily check)
+- Pull-to-refresh on the dashboard refreshes weather and re-runs plant sync
+- Notification taps open the relevant plant detail screen
+- First launch shows a short onboarding dialog
 - Room v13 with explicit migrations 4 to 13; `fallbackToDestructiveMigration()` is set as a safety net for dev builds
 - `exportSchema = true` — schema JSON is exported to `app/schemas/`; commit these files
 - Startup import order: `EncyclopediaImporter` first (SSOT), then `JsonImporter` (requires encyclopedia data)

@@ -21,9 +21,11 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -33,12 +35,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,20 +57,29 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.R
+import com.example.pruningapp.data.OnboardingPreferences
+import com.example.pruningapp.data.SyncPreferences
+import com.example.pruningapp.data.SyncStatusInfo
 import com.example.pruningapp.data.Task
-import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.data.TaskStatus
 import com.example.pruningapp.data.WeatherData
 import com.example.pruningapp.data.isDone
+import com.example.pruningapp.navigation.Screen
+import com.example.pruningapp.ui.components.ScreenTemplate
+import com.example.pruningapp.ui.components.UiState
 import com.example.pruningapp.viewmodel.CollectionViewModel
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import com.example.pruningapp.viewmodel.WeatherViewModel
+import com.example.pruningapp.worker.GlobalSyncWorker
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     navController: NavController,
@@ -68,10 +88,52 @@ fun DashboardScreen(
     weatherViewModel: WeatherViewModel = viewModel(),
     collectionViewModel: CollectionViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val syncPrefs = remember { SyncPreferences(context) }
+    val onboardingPrefs = remember { OnboardingPreferences(context) }
+
     val upcomingTasks by taskViewModel.upcomingTasks.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
-    val weather by weatherViewModel.weather.collectAsState()
+    val weatherState by weatherViewModel.uiState.collectAsState()
+    val syncStatus by syncPrefs.status.collectAsState(initial = SyncStatusInfo())
     val collections by collectionViewModel.allCollectionsWithPlants.collectAsState()
+
+    var showOnboarding by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (!onboardingPrefs.hasSeenOnboarding.first()) {
+            showOnboarding = true
+        }
+    }
+
+    LaunchedEffect(weatherState) {
+        if (weatherState !is UiState.Loading) {
+            isRefreshing = false
+        }
+    }
+
+    if (showOnboarding) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.onboarding_title)) },
+            text = { Text(stringResource(R.string.onboarding_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            onboardingPrefs.setOnboardingSeen()
+                            showOnboarding = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.onboarding_confirm))
+                }
+            }
+        )
+    }
+
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("pl"))
 
@@ -93,6 +155,34 @@ fun DashboardScreen(
         }
     }
 
+    val onRefreshDashboard: () -> Unit = {
+        isRefreshing = true
+        weatherViewModel.refresh()
+        scope.launch {
+            syncPrefs.clearError()
+            GlobalSyncWorker.enqueue(context)
+        }
+    }
+
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            onRefreshDashboard()
+        }
+    }
+
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) {
+            pullToRefreshState.endRefresh()
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(pullToRefreshState.nestedScrollConnection)
+    ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 16.dp),
@@ -144,6 +234,13 @@ fun DashboardScreen(
                         }
                     }
                     Column(horizontalAlignment = Alignment.End) {
+                        IconButton(onClick = onRefreshDashboard) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.dashboard_refresh_weather),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                         IconButton(onClick = { navController.navigate(Screen.Stats.route) }) {
                             Icon(
                                 Icons.Default.BarChart,
@@ -163,10 +260,30 @@ fun DashboardScreen(
             }
         }
 
-        weather?.let { current ->
+        if (syncStatus.hadErrors) {
             item {
-                if (current.hasWarning) WeatherWarningCard(current)
-                else WeatherInfoCard(current)
+                SyncErrorCard(
+                    syncStatus = syncStatus,
+                    onRetry = {
+                        scope.launch {
+                            syncPrefs.clearError()
+                            GlobalSyncWorker.enqueue(context)
+                        }
+                    }
+                )
+            }
+        }
+
+        item {
+            ScreenTemplate(
+                uiState = weatherState,
+                onRetry = { weatherViewModel.refresh() },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) { data ->
+                data?.let { current ->
+                    if (current.hasWarning) WeatherWarningCard(current)
+                    else WeatherInfoCard(current)
+                }
             }
         }
 
@@ -258,6 +375,47 @@ fun DashboardScreen(
                         onClick = { plant?.let { navController.navigate(Screen.PlantDetail.route(it.id)) } }
                     )
                 }
+            }
+        }
+    }
+
+        PullToRefreshContainer(
+            state = pullToRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+    }
+}
+
+@Composable
+private fun SyncErrorCard(syncStatus: SyncStatusInfo, onRetry: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.dashboard_sync_error_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                text = stringResource(
+                    R.string.dashboard_sync_error_body,
+                    syncStatus.failCount,
+                    syncStatus.totalCount,
+                    syncStatus.lastError ?: ""
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            TextButton(onClick = onRetry) {
+                Text(stringResource(R.string.dashboard_sync_retry))
             }
         }
     }

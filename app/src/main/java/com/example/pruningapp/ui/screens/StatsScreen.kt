@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -73,7 +73,7 @@ fun StatsScreen(
                 title = { Text("Statystyki") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Wróc")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróc")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -335,7 +335,7 @@ private fun formatMonthLabel(yearMonth: String): String {
         val name = ym.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale("pl"))
             .replaceFirstChar { it.uppercase() }
         "$name ${ym.year}"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         yearMonth
     }
 }
@@ -346,7 +346,7 @@ private fun formatMonthShort(yearMonth: String): String {
         val name = ym.month.getDisplayName(TextStyle.SHORT, Locale("pl"))
             .replaceFirstChar { it.uppercase() }.trimEnd('.')
         "$name ${ym.year.toString().takeLast(2)}"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         yearMonth
     }
 }

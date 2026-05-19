@@ -120,4 +120,14 @@
     <string name="dashboard_add_plants_hint">Dodaj posiadane rośliny, aby zobaczyć harmonogram</string>
     <string name="dashboard_active_now">Aktywne teraz</string>
     <string name="dashboard_from_date">Od %1$s</string>
+    <string name="dashboard_refresh_weather">Odswiez pogode</string>
+    <string name="dashboard_sync_error_title">Synchronizacja nie powiodla sie</string>
+    <string name="dashboard_sync_error_body">%1$d z %2$d roslin nie zsynchronizowano. %3$s</string>
+    <string name="dashboard_sync_retry">Synchronizuj ponownie</string>
+    <string name="weather_load_error">Nie udalo sie pobrac pogody</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Witaj w Prunio</string>
+    <string name="onboarding_body">Katalog zawiera setki gatunkow. Oznacz rosliny jako posiadane, aby zobaczyc okna ciecia na pulpicie i w kalendarzu. Tylko wlasne rosliny (dodane recznie) mozna edytowac i usuwac. Zadania to okna przycinania (od-do), a nie codzienne przypomnienia.</string>
+    <string name="onboarding_confirm">Rozumiem</string>
 </resources>

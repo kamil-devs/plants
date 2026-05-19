@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -103,7 +103,7 @@ fun AddEditCollectionScreen(
                 title = { Text(if (isEdit) "Edytuj kolekcje" else "Nowa kolekcja") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Wróc")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróc")
                     }
                 },
                 actions = {

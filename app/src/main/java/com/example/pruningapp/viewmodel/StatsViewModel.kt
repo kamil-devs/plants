@@ -6,14 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.pruningapp.App
 import com.example.pruningapp.data.MonthCount
 import com.example.pruningapp.repository.PlantStats
-import com.example.pruningapp.repository.StatsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
 class StatsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repo = StatsRepository((application as App).database)
+    private val repo = (application as App).statsRepository
 
     val plantStats: StateFlow<PlantStats> = repo.getPlantStatsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlantStats(0, 0, 0))

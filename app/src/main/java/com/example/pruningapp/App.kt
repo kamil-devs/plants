@@ -11,8 +11,16 @@ import androidx.work.WorkManager
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.EncyclopediaImporter
 import com.example.pruningapp.data.JsonImporter
+import com.example.pruningapp.network.WikipediaImageProviderImpl
+import com.example.pruningapp.repository.CollectionRepository
+import com.example.pruningapp.repository.PlantRepository
+import com.example.pruningapp.repository.PruningGuideRepository
+import com.example.pruningapp.repository.StatsRepository
+import com.example.pruningapp.repository.TaskRepository
+import com.example.pruningapp.repository.WeatherRepository
 import com.example.pruningapp.worker.GlobalSyncWorker
 import com.example.pruningapp.worker.NotificationWorker
+import com.example.pruningapp.worker.TaskRefreshWorker
 import com.example.pruningapp.worker.WikipediaSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +36,24 @@ import okhttp3.OkHttpClient
 class App : Application(), ImageLoaderFactory {
 
     val database by lazy { AppDatabase.getDatabase(this) }
+
+    val wikipediaImageProvider by lazy { WikipediaImageProviderImpl.create(this) }
+
+    val plantRepository by lazy {
+        PlantRepository(database, wikiImageProvider = wikipediaImageProvider)
+    }
+
+    val taskRepository by lazy { TaskRepository(database) }
+
+    val collectionRepository by lazy { CollectionRepository(database) }
+
+    val statsRepository by lazy { StatsRepository(database) }
+
+    val pruningGuideRepository by lazy {
+        PruningGuideRepository(database.pruningGuideCacheDao())
+    }
+
+    val weatherRepository by lazy { WeatherRepository(this) }
 
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
@@ -62,7 +88,6 @@ class App : Application(), ImageLoaderFactory {
         scheduleNotificationWorker()
 
         CoroutineScope(Dispatchers.IO).launch {
-            // Kolejność: najpierw encyklopedia, potem rośliny (JsonImporter potrzebuje encyclopediaSpeciesDao)
             if (database.encyclopediaSpeciesDao().getCount() == 0) {
                 EncyclopediaImporter(this@App, database).import()
             }
@@ -73,6 +98,8 @@ class App : Application(), ImageLoaderFactory {
 
         GlobalSyncWorker.enqueue(this)
         WikipediaSyncWorker.enqueue(this)
+        TaskRefreshWorker.enqueue(this)
+        TaskRefreshWorker.runOnceNow(this)
     }
 
     private fun createNotificationChannels() {

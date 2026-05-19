@@ -24,26 +24,26 @@ Deploy to a connected device/emulator via Android Studio's run button or `./grad
 
 ## Architecture
 
-**Stack:** Kotlin + Jetpack Compose + Room v13 + WorkManager + DataStore + Retrofit + Coil + ML Kit Translate. No Hilt — dependencies are wired manually through `App`-level lazy vals; ViewModels use `AndroidViewModel(application)` and cast to `(application as App).someRepository`.
+**Stack:** Kotlin + Jetpack Compose + Room v13 + WorkManager + DataStore + Retrofit + Coil + ML Kit Translate. No Hilt — dependencies are wired through `App`-level lazy vals (`plantRepository`, `taskRepository`, `weatherRepository`, etc.); ViewModels cast `application` to `App` and use those repos.
 
 **Layer flow:** `Room DAOs` → `Repository` (suspend/Flow wrappers) → `ViewModel` (StateFlow) → `Screen` (Composable).
 
 **Package layout:**
 - `data/` — Room entities (`Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`, `PruningGuideCache`, `EncyclopediaSpecies`), DAOs, `AppDatabase`, `JsonImporter`, `EncyclopediaImporter`, `WeatherPreferences` (DataStore), `TaskStatus` enum
-- `domain/` — `WikipediaImageProvider` interface, `Mapper<I,O>` interface
+- `domain/` — `WikipediaImageProvider` interface
 - `network/` — `WikipediaImageProviderImpl` (5-step Wikipedia image fallback)
-- `remote/` — `PerenualApiService`, `WikipediaApiService`, `WeatherApiService` (each has its own Retrofit instance), DTOs
+- `remote/` — `ApiClient.sharedOkHttpClient`, `PerenualApiService`, `WikipediaApiService`, `WeatherApiService`, DTOs
 - `repository/` — `PlantRepository`, `TaskRepository`, `CollectionRepository`, `StatsRepository`, `PruningGuideRepository`, `WeatherRepository`
 - `viewmodel/` — one ViewModel per domain: `PlantViewModel`, `TaskViewModel`, `CollectionViewModel`, `StatsViewModel`, `WeatherViewModel`, `NotificationSettingsViewModel`, `PruningGuideViewModel`
 - `ui/screens/` — one file per screen; screens receive `NavController` and create their own ViewModel via `viewModel()`
 - `ui/components/` — `MagazineCard`, `FloatingPillNav`, `ScreenTemplate` (UiState slot API), `CardDisplayable`
 - `ui/theme/` — botanical green palette, Google Fonts (Lora/DM Sans/DM Mono), dynamic color disabled
-- `worker/` — `NotificationWorker`, `GlobalSyncWorker`, `WikipediaSyncWorker`
+- `worker/` — `NotificationWorker`, `GlobalSyncWorker`, `WikipediaSyncWorker`, `TaskRefreshWorker`
 - `navigation/` — `Screen` sealed class with all routes
 
 **Navigation** (`MainActivity.kt`): single `NavHost` + floating pill nav (4 tabs). Pill tabs: `Dashboard`, `Plants`, `Calendar`, `Encyclopedia`. Secondary routes (no pill): `Collections`, `Settings`, `Stats`, `AddPlant`, `PlantDetail`, `EditPlant`, `EncyclopediaDetail`, `AddCollection`, `EditCollection`, `CollectionDetail`.
 
-**Database** (`AppDatabase`, version 13): entities are `Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`, `PruningGuideCache`, `EncyclopediaSpecies`. Migrations 4 through 13 are defined; `fallbackToDestructiveMigration()` is also set (safe for dev). `exportSchema = true` — schema files live in `app/schemas/`.
+**Database** (`AppDatabase`, version 14): entities are `Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`, `PruningGuideCache`, `EncyclopediaSpecies`. Migrations 4 through 13 are defined; `fallbackToDestructiveMigration()` is also set (safe for dev). `exportSchema = true` — schema files live in `app/schemas/`.
 
 **Startup import** (`App.kt`): `EncyclopediaImporter` runs first (populates `encyclopedia_species` when empty), then `JsonImporter` runs (populates `plants` when count is 0 — reads perenualId from encyclopedia as SSOT).
 
@@ -66,7 +66,9 @@ They are injected into `BuildConfig` in `app/build.gradle`. Debug builds skip li
 - Pinned plants (`pinned = true`) sort to the top of `PlantListScreen`.
 - `StatsScreen` is reachable via route `stats` but is **not** in the pill nav.
 - `Collections` screen is reachable from the Plants toolbar and from the Dashboard collections card.
-- Task generation: `TaskGenerator.generateForRule(plantId, start, end, type, db)` is the single source — used by both `JsonImporter` and `PlantRepository.replacePruningRulesAndTasks`.
+- Task generation: `AppDatabase.generateTasksForRule(...)` / `computeTaskDates(...)` in `TaskGenerator.kt` — used by `JsonImporter`, `PlantRepository.replacePruningRulesAndTasks`, and `TaskRefreshWorker` (yearly).
+- Sync status: `SyncPreferences` (DataStore) — `GlobalSyncWorker` records failures; dashboard shows retry banner.
+- Notifications tap opens `plant_detail/{id}` via `MainActivity.EXTRA_PLANT_ID`.
 
 ## Kotlin/Compose conventions
 

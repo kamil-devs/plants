@@ -1,6 +1,7 @@
 package com.example.pruningapp
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -21,7 +22,9 @@ import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,14 +55,31 @@ import com.example.pruningapp.ui.theme.PlantPruningTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var pendingPlantIdState = mutableStateOf<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        readPlantIdFromIntent(intent)
         requestNotificationPermission()
         setContent {
             PlantPruningTheme {
-                MainApp()
+                MainApp(
+                    pendingPlantId = pendingPlantIdState.value,
+                    onPendingPlantHandled = { pendingPlantIdState.value = null }
+                )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        readPlantIdFromIntent(intent)
+    }
+
+    private fun readPlantIdFromIntent(intent: Intent?) {
+        val id = intent?.getLongExtra(EXTRA_PLANT_ID, -1L) ?: -1L
+        if (id > 0L) pendingPlantIdState.value = id
     }
 
     private fun requestNotificationPermission() {
@@ -75,6 +95,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    companion object {
+        const val EXTRA_PLANT_ID = "plant_id"
+    }
 }
 
 private val pillNavItems = listOf(
@@ -87,7 +111,10 @@ private val pillNavItems = listOf(
 private val pillNavRoutes = pillNavItems.map { it.route }.toSet()
 
 @Composable
-fun MainApp() {
+fun MainApp(
+    pendingPlantId: Long? = null,
+    onPendingPlantHandled: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.hierarchy
@@ -95,6 +122,14 @@ fun MainApp() {
         ?.route
 
     val showPillNav = navBackStackEntry?.destination?.route in pillNavRoutes
+
+    LaunchedEffect(pendingPlantId) {
+        val id = pendingPlantId ?: return@LaunchedEffect
+        navController.navigate(Screen.PlantDetail.route(id)) {
+            launchSingleTop = true
+        }
+        onPendingPlantHandled()
+    }
 
     Scaffold { innerPadding ->
         Box(

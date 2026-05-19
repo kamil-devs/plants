@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.pruningapp.App
 import com.example.pruningapp.data.Collection
 import com.example.pruningapp.data.CollectionWithPlants
-import com.example.pruningapp.repository.CollectionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class CollectionViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repo = CollectionRepository((application as App).database)
+    private val repo = (application as App).collectionRepository
 
     val allCollectionsWithPlants: StateFlow<List<CollectionWithPlants>> =
         repo.getAllCollectionsWithPlants()

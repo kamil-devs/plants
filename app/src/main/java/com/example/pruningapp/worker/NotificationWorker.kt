@@ -1,11 +1,14 @@
 package com.example.pruningapp.worker
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.pruningapp.App
+import com.example.pruningapp.MainActivity
 import com.example.pruningapp.R
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.NotifSettings
@@ -23,7 +26,6 @@ class NotificationWorker(
     override suspend fun doWork(): Result {
         val settings = NotificationPreferences(applicationContext).settings.first()
 
-        // Brak włączonych typów — nic nie rób
         if (!settings.hasAnyEnabled()) return Result.success()
 
         val db = AppDatabase.getDatabase(applicationContext)
@@ -35,7 +37,6 @@ class NotificationWorker(
         val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong()).format(fmt)
         val weekEnd = today.minusDays((today.dayOfWeek.value - 1).toLong()).plusDays(6).format(fmt)
 
-        // Check weather cache for smart warnings (graceful fallback to null on any error)
         val weatherWarning: String? = try {
             WeatherRepository(applicationContext).getWeather()
                 ?.takeIf { it.hasWarning }
@@ -47,7 +48,7 @@ class NotificationWorker(
         if (settings.overdue) sendOverdueNotification(db, todayStr)
         if (settings.endingSoon) sendEndingSoonNotifications(db, tomorrowStr, dayAfterStr, weatherWarning)
         if (settings.weekly && today.dayOfWeek.value == 1) sendWeeklyWindowsNotification(db, weekStart, weekEnd)
-        if (settings.smart) sendSmartNotification(db, today, todayStr, weekStart, weekEnd, fmt)
+        if (settings.smart) sendSmartNotification(db, today, todayStr, weekStart, weekEnd)
 
         return Result.success()
     }
@@ -66,7 +67,8 @@ class NotificationWorker(
                 title = if (isStart) "Dzis zaczyna sie okno ciecia - ${plant.name}"
                         else "Trwa okno ciecia - ${plant.name}",
                 body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
-                notificationId = task.id.toInt()
+                notificationId = task.id.toInt(),
+                plantId = plant.id
             )
         }
     }
@@ -83,7 +85,8 @@ class NotificationWorker(
                 channelId = App.CHANNEL_ID,
                 title = "Jutro zaczyna sie okno ciecia - ${plant.name}",
                 body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
-                notificationId = task.id.toInt() + 500_000
+                notificationId = task.id.toInt() + 500_000,
+                plantId = plant.id
             )
         }
     }
@@ -96,11 +99,13 @@ class NotificationWorker(
             .take(3)
             .joinToString(", ")
         val suffix = if (overdue.size > 3) " i inne" else ""
+        val firstPlantId = overdue.firstOrNull()?.plantId
         sendNotification(
             channelId = App.CHANNEL_ID,
             title = "Zaległe ciecia: ${overdue.size}",
-            body = if (names.isNotEmpty()) "$names$suffix" else "Sprawdz zakładke Glowna",
-            notificationId = 1_000_000
+            body = if (names.isNotEmpty()) "$names$suffix" else "Sprawdz zakladke Glowna",
+            notificationId = 1_000_000,
+            plantId = firstPlantId
         )
     }
 
@@ -117,7 +122,8 @@ class NotificationWorker(
                 channelId = App.CHANNEL_ID,
                 title = "Konczy sie okno ciecia - ${plant.name}",
                 body = if (weatherWarning != null) "$base\n$weatherWarning" else base,
-                notificationId = task.id.toInt() + 1_500_000
+                notificationId = task.id.toInt() + 1_500_000,
+                plantId = plant.id
             )
         }
     }
@@ -142,7 +148,8 @@ class NotificationWorker(
             channelId = App.CHANNEL_ID,
             title = "Ten tydzien: ${ownedTasks.size} nowych okien ciecia",
             body = "$names$suffix",
-            notificationId = 2_000_000
+            notificationId = 2_000_000,
+            plantId = ownedTasks.first().plantId
         )
     }
 
@@ -151,8 +158,7 @@ class NotificationWorker(
         today: LocalDate,
         todayStr: String,
         weekStart: String,
-        weekEnd: String,
-        fmt: DateTimeFormatter
+        weekEnd: String
     ) {
         val month = today.monthValue
         val seasonMsg = when (month) {
@@ -174,7 +180,8 @@ class NotificationWorker(
                 channelId = App.CHANNEL_SMART_ID,
                 title = "Wskazowka: ${activePlant.name}",
                 body = "$seasonMsg. Okno ciecia aktywne!",
-                notificationId = 2_500_000
+                notificationId = 2_500_000,
+                plantId = activePlant.id
             )
             return
         }
@@ -188,7 +195,8 @@ class NotificationWorker(
                 channelId = App.CHANNEL_SMART_ID,
                 title = "Wskazowka ogrodnicza",
                 body = "$seasonMsg. Wkrotce ciecie: ${weekPlant.name}",
-                notificationId = 2_500_001
+                notificationId = 2_500_001,
+                plantId = weekPlant.id
             )
         }
     }
@@ -197,13 +205,26 @@ class NotificationWorker(
         channelId: String,
         title: String,
         body: String,
-        notificationId: Int
+        notificationId: Int,
+        plantId: Long? = null
     ) {
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            plantId?.let { putExtra(MainActivity.EXTRA_PLANT_ID, it) }
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_plant_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pendingIntent)
             .setPriority(
                 if (channelId == App.CHANNEL_SMART_ID) NotificationCompat.PRIORITY_LOW
                 else NotificationCompat.PRIORITY_DEFAULT

@@ -2,14 +2,7 @@
 
 package com.example.pruningapp.ui.screens
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -24,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,6 +53,8 @@ import coil.compose.AsyncImage
 import com.example.pruningapp.R
 import com.example.pruningapp.data.EncyclopediaSpecies
 import com.example.pruningapp.repository.PruningGuideResult
+import com.example.pruningapp.ui.components.ScreenTemplate
+import com.example.pruningapp.ui.components.toUiState
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.PruningGuideViewModel
 
@@ -125,31 +118,26 @@ fun PerenualPlantDetailScreen(
                 }
             }
 
-            when (s) {
-                is PruningGuideResult.Loading -> item { DetailLoadingSkeleton() }
+            item {
+                ScreenTemplate(
+                    uiState = s.toUiState(),
+                    onRetry = { viewModel.load(perenualId) }
+                ) { guide ->
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PruningTimingSection(guide.pruningMonths)
 
-                is PruningGuideResult.NotFound -> item { DetailNotFoundCard() }
+                        if (!guide.frequency.isNullOrBlank()) {
+                            FrequencySection(guide.frequency)
+                        }
+                        if (!guide.maintenanceLevel.isNullOrBlank()) {
+                            MaintenanceSection(guide.maintenanceLevel)
+                        }
+                        if (!guide.description.isNullOrBlank()) {
+                            DescriptionSection(guide.description)
+                        }
 
-                is PruningGuideResult.Error -> item {
-                    DetailErrorCard(s.message) { viewModel.load(perenualId) }
-                }
-
-                is PruningGuideResult.Success -> {
-                    item { PruningTimingSection(s.pruningMonths) }
-
-                    if (!s.frequency.isNullOrBlank()) {
-                        item { FrequencySection(s.frequency) }
-                    }
-                    if (!s.maintenanceLevel.isNullOrBlank()) {
-                        item { MaintenanceSection(s.maintenanceLevel) }
-                    }
-                    if (!s.description.isNullOrBlank()) {
-                        item { DescriptionSection(s.description) }
-                    }
-
-                    item {
                         Text(
-                            text = stringResource(R.string.encyclopedia_data_source, s.commonName),
+                            text = stringResource(R.string.encyclopedia_data_source, guide.commonName),
                             style = MaterialTheme.typography.labelSmall,
                             fontStyle = FontStyle.Italic,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
@@ -301,104 +289,6 @@ private fun DescriptionSection(description: String) {
                     stringResource(
                         if (expanded) R.string.action_show_less else R.string.action_read_more
                     )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailLoadingSkeleton() {
-    val transition = rememberInfiniteTransition(label = "skeleton")
-    val alpha by transition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.5f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-        label = "alpha"
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        repeat(3) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SkeletonBox(Modifier.fillMaxWidth(0.38f).height(13.dp), alpha)
-                    SkeletonBox(Modifier.fillMaxWidth().height(52.dp), alpha)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SkeletonBox(modifier: Modifier, alpha: Float) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
-    )
-}
-
-@Composable
-private fun DetailNotFoundCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = stringResource(R.string.cd_info),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-            )
-            Text(
-                text = stringResource(R.string.encyclopedia_no_data),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun DetailErrorCard(message: String, onRetry: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
-                Text(
-                    text = stringResource(R.string.error_prefix, message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-            TextButton(onClick = onRetry, contentPadding = PaddingValues(0.dp)) {
-                Text(
-                    text = stringResource(R.string.action_retry),
-                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         }
