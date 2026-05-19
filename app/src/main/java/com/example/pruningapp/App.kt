@@ -99,7 +99,10 @@ class App : Application(), ImageLoaderFactory {
         GlobalSyncWorker.enqueue(this)
         WikipediaSyncWorker.enqueue(this)
         TaskRefreshWorker.enqueue(this)
-        TaskRefreshWorker.runOnceNow(this)
+        
+        CoroutineScope(Dispatchers.Default).launch {
+            TaskRefreshWorker.runOnceNow(this@App)
+        }
     }
 
     private fun createNotificationChannels() {

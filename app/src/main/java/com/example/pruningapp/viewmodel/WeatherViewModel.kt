@@ -18,6 +18,12 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private val _uiState = MutableStateFlow<UiState<WeatherData?>>(UiState.Loading)
     val uiState: StateFlow<UiState<WeatherData?>> = _uiState.asStateFlow()
 
+    private val _searchResults = MutableStateFlow<List<com.example.pruningapp.remote.GeocodingResponse>>(emptyList())
+    val searchResults = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching = _isSearching.asStateFlow()
+
     init {
         refresh()
     }
@@ -31,6 +37,30 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             } catch (e: Exception) {
                 UiState.Error(e.message ?: "Nie udalo sie pobrac pogody")
             }
+        }
+    }
+
+    fun searchCities(query: String) {
+        if (query.trim().length < 2) {
+            _searchResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _isSearching.value = true
+            try {
+                _searchResults.value = weatherRepository.searchCities(query)
+            } catch (_: Exception) {
+                _searchResults.value = emptyList()
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
+    fun updateLocation(city: String, country: String?, state: String?) {
+        viewModelScope.launch {
+            weatherRepository.setLocation(city, country, state)
+            refresh()
         }
     }
 }

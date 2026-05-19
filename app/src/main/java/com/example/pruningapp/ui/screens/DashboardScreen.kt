@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +38,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.clickable
+import com.example.pruningapp.remote.GeocodingResponse
+import com.example.pruningapp.util.LocationTranslator
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -98,12 +105,17 @@ fun DashboardScreen(
     val weatherState by weatherViewModel.uiState.collectAsState()
     val syncStatus by syncPrefs.status.collectAsState(initial = SyncStatusInfo())
     val collections by collectionViewModel.allCollectionsWithPlants.collectAsState()
+    val searchResults by weatherViewModel.searchResults.collectAsState()
+    val isSearching by weatherViewModel.isSearching.collectAsState()
+    val hasSeenOnboarding by onboardingPrefs.hasSeenOnboarding.collectAsState(initial = null)
 
     var showOnboarding by remember { mutableStateOf(false) }
+    var onboardingStep by remember { mutableStateOf(0) }
+    var cityQuery by remember { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        if (!onboardingPrefs.hasSeenOnboarding.first()) {
+    LaunchedEffect(hasSeenOnboarding) {
+        if (hasSeenOnboarding == false) {
             showOnboarding = true
         }
     }
@@ -117,18 +129,89 @@ fun DashboardScreen(
     if (showOnboarding) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text(stringResource(R.string.onboarding_title)) },
-            text = { Text(stringResource(R.string.onboarding_body)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            onboardingPrefs.setOnboardingSeen()
-                            showOnboarding = false
+            title = {
+                Text(
+                    if (onboardingStep == 0) stringResource(R.string.onboarding_title)
+                    else "Lokalizacja ogrodu"
+                )
+            },
+            text = {
+                Column {
+                    if (onboardingStep == 0) {
+                        Text(stringResource(R.string.onboarding_body))
+                    } else {
+                        Text("Wybierz lokalizację, abyśmy mogli dopasować porady do pogody w Twoim regionie.")
+                        Spacer(Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = cityQuery,
+                            onValueChange = {
+                                cityQuery = it
+                                weatherViewModel.searchCities(it)
+                            },
+                            label = { Text("Miejsce Twojego ogrodu...") },
+                            placeholder = { Text("np. Lublin 20-001") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        if (isSearching) {
+                            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(searchResults) { city ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                    weatherViewModel.updateLocation(city.name, city.country, city.state)
+                                    scope.launch {
+                                        onboardingPrefs.setOnboardingSeen()
+                                        showOnboarding = false
+                                    }
+                                }
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = if (city.zip != null) "${city.name} (${city.zip}), ${city.country}"
+                                       else "${city.name}, ${city.country}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                                    if (!city.state.isNullOrBlank()) {
+                                        Text(
+                                            text = LocationTranslator.translateVoivodeship(city.state) ?: city.state,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                )
+                            }
                         }
                     }
-                ) {
-                    Text(stringResource(R.string.onboarding_confirm))
+                }
+            },
+            confirmButton = {
+                if (onboardingStep == 0) {
+                    TextButton(onClick = { onboardingStep = 1 }) {
+                        Text("Dalej")
+                    }
+                }
+            },
+            dismissButton = {
+                if (onboardingStep == 1) {
+                    TextButton(onClick = { onboardingStep = 0 }) {
+                        Text("Wstecz")
+                    }
                 }
             }
         )

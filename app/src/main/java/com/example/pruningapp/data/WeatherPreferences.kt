@@ -56,13 +56,32 @@ class WeatherPreferences(private val context: Context) {
         val KEY_DESCRIPTION  = stringPreferencesKey("weather_description")
         val KEY_CACHED_AT    = longPreferencesKey("weather_cached_at")
         val KEY_CITY         = stringPreferencesKey("weather_city")
+        val KEY_COUNTRY      = stringPreferencesKey("weather_country")
+        val KEY_STATE        = stringPreferencesKey("weather_state")
     }
 
     suspend fun getCity(): String =
         context.weatherDataStore.data.first()[KEY_CITY] ?: "Lublin"
 
-    suspend fun setCity(city: String) =
-        context.weatherDataStore.edit { it[KEY_CITY] = city }
+    suspend fun getFullLocation(): String {
+        val prefs = context.weatherDataStore.data.first()
+        val city = prefs[KEY_CITY] ?: "Lublin"
+        val country = prefs[KEY_COUNTRY]
+        val state = prefs[KEY_STATE]
+        
+        return buildString {
+            append(city)
+            if (!state.isNullOrBlank()) append(",$state")
+            if (!country.isNullOrBlank()) append(",$country")
+        }
+    }
+
+    suspend fun setLocation(city: String, country: String?, state: String?) =
+        context.weatherDataStore.edit {
+            it[KEY_CITY] = city
+            if (country != null) it[KEY_COUNTRY] = country else it.remove(KEY_COUNTRY)
+            if (state != null) it[KEY_STATE] = state else it.remove(KEY_STATE)
+        }
 
     suspend fun getCachedWeather(): WeatherData? {
         val prefs = context.weatherDataStore.data.first()

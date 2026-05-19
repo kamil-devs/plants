@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,12 +46,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.pruningapp.data.WeatherPreferences
 import com.example.pruningapp.viewmodel.NotificationSettingsViewModel
 import com.example.pruningapp.viewmodel.WeatherViewModel
-import com.example.pruningapp.worker.NotificationWorker
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 
@@ -121,7 +116,7 @@ fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Miasto do prognozy pogody",
+                            text = "Miejsce Twojego ogrodu",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -130,15 +125,14 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = cityDraft,
                         onValueChange = { cityDraft = it },
-                        label = { Text("Nazwa miasta") },
-                        placeholder = { Text("np. Lublin") },
+                        label = { Text("Miejscowość lub kod pocztowy") },
+                        placeholder = { Text("np. Borowa") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
                             if (cityDraft.isNotBlank()) {
                                 scope.launch {
-                                    weatherPrefs.setCity(cityDraft.trim())
-                                    weatherViewModel.refresh()
+                                    weatherViewModel.updateLocation(cityDraft.trim(), null, null)
                                 }
                                 keyboardController?.hide()
                             }
@@ -150,8 +144,7 @@ fun SettingsScreen(
                         onClick = {
                             if (cityDraft.isNotBlank()) {
                                 scope.launch {
-                                    weatherPrefs.setCity(cityDraft.trim())
-                                    weatherViewModel.refresh()
+                                    weatherViewModel.updateLocation(cityDraft.trim(), null, null)
                                 }
                                 keyboardController?.hide()
                                 Toast.makeText(context, "Miasto zapisane: ${cityDraft.trim()}", Toast.LENGTH_SHORT).show()
@@ -263,47 +256,6 @@ fun SettingsScreen(
                         checked = settings.smart,
                         onToggle = { notifViewModel.setSmart(it) }
                     )
-
-                    Spacer(Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(Modifier.height(12.dp))
-
-                    // Przycisk testowy
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Test powiadomien",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Uruchamia worker natychmiast i wysyla powiadomienia zgodnie z powyzszymi ustawieniami.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            val request = OneTimeWorkRequestBuilder<NotificationWorker>().build()
-                            WorkManager.getInstance(context).enqueue(request)
-                            Toast.makeText(
-                                context,
-                                "Worker uruchomiony — powiadomienia pojawia sie za chwile",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            Icons.Default.NotificationsActive,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Wyslij powiadomienie testowe")
-                    }
                 }
             }
 
