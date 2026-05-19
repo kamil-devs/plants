@@ -11,23 +11,12 @@
     <!-- Nawigacja i tytuły ekranów -->
     <string name="screen_my_plants">Moje rośliny</string>
     <string name="screen_encyclopedia">Poradnik pielęgnacji</string>
-    <string name="screen_calendar">Kalendarz</string>
-    <string name="screen_collections">Kolekcje</string>
-    <string name="screen_settings">Ustawienia</string>
-    <string name="screen_stats">Statystyki</string>
-    <string name="screen_add_plant">Dodaj roślinę</string>
-    <string name="screen_edit_plant">Edytuj roślinę</string>
     <string name="screen_pruning_guide">Poradnik pielęgnacji</string>
 
     <!-- Akcje globalne -->
     <string name="action_retry">Spróbuj ponownie</string>
-    <string name="action_add">Dodaj</string>
-    <string name="action_save">Zapisz</string>
     <string name="action_cancel">Anuluj</string>
     <string name="action_delete">Usuń</string>
-    <string name="action_edit">Edytuj</string>
-    <string name="action_back">Wróć</string>
-    <string name="action_confirm">Potwierdź</string>
     <string name="action_show_less">Pokaż mniej</string>
     <string name="action_read_more">Czytaj więcej</string>
     <string name="action_clear">Wyczyść</string>
@@ -46,15 +35,9 @@
 
     <!-- Obsługa błędów -->
     <string name="error_prefix">Błąd: %1$s</string>
-    <string name="error_server">Błąd serwera (%1$d)</string>
-    <string name="error_rate_limit">Przekroczono limit zapytań API. Spróbuj ponownie za minutę.</string>
-    <string name="error_no_internet">Brak połączenia z internetem</string>
-    <string name="error_no_api_key">Brak klucza API Perenual</string>
-    <string name="error_generic">Błąd serwera lub danych: %1$s</string>
 
     <!-- Ekran encyklopedii -->
     <string name="encyclopedia_info_tip">Szczegółowe porady przycinania z bazy Perenual. Kliknij roślinę, aby zobaczyć ekspertyzę.</string>
-    <string name="encyclopedia_no_data">Brak szczegółowych danych pielęgnacyjnych w bazie Perenual dla tej rośliny.</string>
     <string name="encyclopedia_data_source">Dane: perenual.com · %1$s</string>
 
     <!-- Sekcje karty szczegółów -->
@@ -87,14 +70,6 @@
     <string name="dialog_delete_plant_title">Usuń roślinę</string>
     <string name="dialog_delete_plant_message">Czy na pewno chcesz usunąć „%1$s"? Tej operacji nie można cofnąć.</string>
 
-    <!-- Kategorie roślin -->
-    <string name="category_fruit">Owocowe</string>
-    <string name="category_ornamental">Ozdobne</string>
-    <string name="category_ornamental_trees">Ozdobne drzewa</string>
-    <string name="category_vegetables">Warzywa</string>
-    <string name="category_herbs">Zioła</string>
-    <string name="category_indoor">Doniczkowe</string>
-
     <!-- Dostępność (contentDescription) -->
     <string name="cd_sync_pending">Synchronizacja w toku</string>
     <string name="cd_collections">Kolekcje</string>
@@ -112,7 +87,6 @@
     <string name="greeting_night">Dobranoc!</string>
 
     <!-- Pulpit — etykiety -->
-    <string name="dashboard_your_garden">Twój ogród</string>
     <string name="dashboard_plants_label">rośliny</string>
     <string name="dashboard_tasks_today">zadań dziś</string>
     <string name="dashboard_upcoming_pruning">Nadchodzące cięcia</string>
@@ -124,7 +98,6 @@
     <string name="dashboard_sync_error_title">Synchronizacja nie powiodla sie</string>
     <string name="dashboard_sync_error_body">%1$d z %2$d roslin nie zsynchronizowano. %3$s</string>
     <string name="dashboard_sync_retry">Synchronizuj ponownie</string>
-    <string name="weather_load_error">Nie udalo sie pobrac pogody</string>
 
     <!-- Onboarding -->
     <string name="onboarding_title">Witaj w Prunio</string>

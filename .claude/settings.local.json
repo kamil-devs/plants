@@ -23,7 +23,14 @@
       "PowerShell(git *)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 100)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat test 2>&1 | Select-Object -Last 40)",
-      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat compileDebugKotlin 2>&1 | Select-Object -Last 40)"
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; cd \"C:\\\\Users\\\\kamil\\\\Documents\\\\Projects\\\\plants\" && .\\\\gradlew.bat compileDebugKotlin 2>&1 | Select-Object -Last 40)",
+      "Bash(gh run *)",
+      "Bash(git config *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(./gradlew lint *)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(git checkout *)"
     ]
   }
 }
