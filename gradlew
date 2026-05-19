@@ -26,8 +26,6 @@ DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
-org.gradle.jvmargs=-Xmx2048m
-
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
