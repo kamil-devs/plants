@@ -1,8 +1,6 @@
 package com.example.pruningapp.remote
 
 import com.google.gson.GsonBuilder
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -19,20 +17,13 @@ interface PerenualApiService {
 
     companion object {
         val instance: PerenualApiService by lazy {
-            val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            val client = OkHttpClient.Builder()
-                .addInterceptor(logging)
-                .build()
-
             val gson = GsonBuilder()
                 .registerTypeAdapter(PruningCount::class.java, PruningCountDeserializer())
                 .create()
 
             Retrofit.Builder()
                 .baseUrl("https://perenual.com/api/v2/")
-                .client(client)
+                .client(sharedOkHttpClient)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
                 .create(PerenualApiService::class.java)

@@ -3,8 +3,6 @@ package com.example.pruningapp.data
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 // perenualId pochodzi teraz z encyclopediaSpeciesDao (SSOT) zamiast statycznego PlantDatabase.
 // Wymaga: encyclopedia_species musi być zasilona przed wywołaniem import().
@@ -13,7 +11,6 @@ class JsonImporter(
     private val db: AppDatabase
 ) {
     private val gson = Gson()
-    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     suspend fun import() {
         val json = context.assets.open("plants.json").bufferedReader().use { it.readText() }
@@ -42,32 +39,7 @@ class JsonImporter(
                         type = pruningType
                     )
                 )
-                generateTask(plantId, window.start, window.end, pruningType)
-            }
-        }
-    }
-
-    private suspend fun generateTask(plantId: Long, start: String, end: String, type: String) {
-        val today = LocalDate.now()
-        for (yearOffset in 0..1) {
-            val year = today.year + yearOffset
-            val startDate = LocalDate.parse("$year-$start", formatter)
-            val endDate = LocalDate.parse("$year-$end", formatter)
-            if (endDate.isBefore(today)) continue
-
-            val count = db.taskDao().countTaskForPlantAndDate(
-                plantId, startDate.format(formatter), type
-            )
-            if (count == 0) {
-                db.taskDao().insertTask(
-                    Task(
-                        plantId = plantId,
-                        date = startDate.format(formatter),
-                        endDate = endDate.format(formatter),
-                        type = type,
-                        status = "pending"
-                    )
-                )
+                db.generateTasksForRule(plantId, window.start, window.end, pruningType)
             }
         }
     }

@@ -19,6 +19,7 @@ interface WeatherApiService {
         val instance: WeatherApiService by lazy {
             Retrofit.Builder()
                 .baseUrl("https://api.openweathermap.org/data/2.5/")
+                .client(sharedOkHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(WeatherApiService::class.java)

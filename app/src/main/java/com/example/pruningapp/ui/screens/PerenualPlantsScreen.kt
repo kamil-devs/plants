@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.R
 import com.example.pruningapp.data.EncyclopediaSpecies
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.ui.components.MagazineCard
 import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
@@ -112,7 +113,7 @@ fun PerenualPlantsScreen(
                 MagazineCard(
                     item = species.toCardItem(imageUrl),
                     aspectRatio = aspectRatioFor(index),
-                    onClick = { navController.navigate("encyclopedia/${species.perenualId}") }
+                    onClick = { navController.navigate(Screen.EncyclopediaDetail.route(species.perenualId)) }
                 )
             }
         }

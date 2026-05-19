@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         EncyclopediaSpecies::class
     ],
     version = 13,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 

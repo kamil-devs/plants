@@ -111,7 +111,7 @@ fun MainApp() {
                 composable(Screen.Plants.route) { PlantListScreen(navController) }
                 composable(Screen.Calendar.route) { CalendarScreen(navController) }
                 composable(Screen.Collections.route) { CollectionsScreen(navController) }
-                composable(Screen.Settings.route) { SettingsScreen() }
+                composable(Screen.Settings.route) { SettingsScreen(navController) }
 
                 composable(Screen.PlantDetail.route) { backStackEntry ->
                     val plantId = backStackEntry.arguments?.getString("plantId")?.toLongOrNull() ?: 0L

@@ -12,17 +12,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,29 +35,58 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.pruningapp.data.WeatherPreferences
 import com.example.pruningapp.viewmodel.NotificationSettingsViewModel
+import com.example.pruningapp.viewmodel.WeatherViewModel
 import com.example.pruningapp.worker.NotificationWorker
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    notifViewModel: NotificationSettingsViewModel = viewModel()
+    navController: NavController,
+    notifViewModel: NotificationSettingsViewModel = viewModel(),
+    weatherViewModel: WeatherViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val settings by notifViewModel.settings.collectAsState()
+    val scope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val weatherPrefs = remember { WeatherPreferences(context) }
+    var cityDraft by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        cityDraft = weatherPrefs.getCity()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Ustawienia") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Wstecz"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -68,9 +101,9 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sekcja jezyka
+            // Sekcja pogody
             Text(
-                text = "Jezyk",
+                text = "Pogoda",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -83,27 +116,52 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Language,
+                            imageVector = Icons.Default.LocationCity,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Wybierz jezyk aplikacji",
+                            text = "Miasto do prognozy pogody",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = true, onClick = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Polski", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    Text(
-                        text = "Wiecej jezykow zostanie dodanych w przyszlosci.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    OutlinedTextField(
+                        value = cityDraft,
+                        onValueChange = { cityDraft = it },
+                        label = { Text("Nazwa miasta") },
+                        placeholder = { Text("np. Lublin") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (cityDraft.isNotBlank()) {
+                                scope.launch {
+                                    weatherPrefs.setCity(cityDraft.trim())
+                                    weatherViewModel.refresh()
+                                }
+                                keyboardController?.hide()
+                            }
+                        }),
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (cityDraft.isNotBlank()) {
+                                scope.launch {
+                                    weatherPrefs.setCity(cityDraft.trim())
+                                    weatherViewModel.refresh()
+                                }
+                                keyboardController?.hide()
+                                Toast.makeText(context, "Miasto zapisane: ${cityDraft.trim()}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = cityDraft.isNotBlank()
+                    ) {
+                        Text("Zapisz miasto")
+                    }
                 }
             }
 

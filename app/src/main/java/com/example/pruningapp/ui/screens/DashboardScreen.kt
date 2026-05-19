@@ -17,7 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -45,9 +47,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.R
 import com.example.pruningapp.data.Task
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.data.TaskStatus
 import com.example.pruningapp.data.WeatherData
 import com.example.pruningapp.data.isDone
+import com.example.pruningapp.viewmodel.CollectionViewModel
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import com.example.pruningapp.viewmodel.WeatherViewModel
@@ -61,11 +65,13 @@ fun DashboardScreen(
     navController: NavController,
     taskViewModel: TaskViewModel = viewModel(),
     plantViewModel: PlantViewModel = viewModel(),
-    weatherViewModel: WeatherViewModel = viewModel()
+    weatherViewModel: WeatherViewModel = viewModel(),
+    collectionViewModel: CollectionViewModel = viewModel()
 ) {
     val upcomingTasks by taskViewModel.upcomingTasks.collectAsState()
     val plants by plantViewModel.allPlants.collectAsState()
     val weather by weatherViewModel.weather.collectAsState()
+    val collections by collectionViewModel.allCollectionsWithPlants.collectAsState()
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("pl"))
 
@@ -138,14 +144,14 @@ fun DashboardScreen(
                         }
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        IconButton(onClick = { navController.navigate("stats") }) {
+                        IconButton(onClick = { navController.navigate(Screen.Stats.route) }) {
                             Icon(
                                 Icons.Default.BarChart,
                                 contentDescription = stringResource(R.string.cd_stats),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
-                        IconButton(onClick = { navController.navigate("settings") }) {
+                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
                             Icon(
                                 Icons.Default.Settings,
                                 contentDescription = stringResource(R.string.cd_settings),
@@ -161,6 +167,57 @@ fun DashboardScreen(
             item {
                 if (current.hasWarning) WeatherWarningCard(current)
                 else WeatherInfoCard(current)
+            }
+        }
+
+        item {
+            Card(
+                onClick = { navController.navigate(Screen.Collections.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Column {
+                            Text(
+                                "Moje kolekcje",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                "${collections.size} ${if (collections.size == 1) "kolekcja" else "kolekcji"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                    )
+                }
             }
         }
 
@@ -198,7 +255,7 @@ fun DashboardScreen(
                                 if (done) TaskStatus.DONE else TaskStatus.PENDING
                             )
                         },
-                        onClick = { plant?.let { navController.navigate("plant_detail/${it.id}") } }
+                        onClick = { plant?.let { navController.navigate(Screen.PlantDetail.route(it.id)) } }
                     )
                 }
             }

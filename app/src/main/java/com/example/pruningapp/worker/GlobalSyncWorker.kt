@@ -1,6 +1,7 @@
 package com.example.pruningapp.worker
 
 import android.content.Context
+import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -36,18 +37,24 @@ class GlobalSyncWorker(
                     plant.name.lowercase() in encyclopediaNames
             }
 
+        var failCount = 0
         for ((index, plant) in pending.withIndex()) {
             try {
                 repo.syncPlantFromApi(plant.id)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                failCount++
+                Log.e(TAG, "Sync failed for plant id=${plant.id} ('${plant.name}'): ${e.message}")
+            }
 
             if (index < pending.lastIndex) delay(5_000)
         }
 
+        if (failCount > 0) Log.w(TAG, "GlobalSyncWorker finished with $failCount error(s) out of ${pending.size}")
         return Result.success()
     }
 
     companion object {
+        private const val TAG = "GlobalSyncWorker"
         private const val WORK_NAME = "global_perenual_sync"
 
         fun enqueue(context: Context) {

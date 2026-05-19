@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.Plant
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.viewmodel.CollectionViewModel
 import com.example.pruningapp.viewmodel.PlantViewModel
 
@@ -137,7 +138,7 @@ fun CollectionDetailScreen(
                 },
                 actions = {
                     if (collection != null) {
-                        IconButton(onClick = { navController.navigate("edit_collection/${collection.id}") }) {
+                        IconButton(onClick = { navController.navigate(Screen.EditCollection.route(collection.id)) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edytuj")
                         }
                     }
@@ -217,7 +218,7 @@ fun CollectionDetailScreen(
                 items(plantsInCollection, key = { it.id }) { plant ->
                     CollectionPlantRow(
                         plant = plant,
-                        onClick = { navController.navigate("plant_detail/${plant.id}") },
+                        onClick = { navController.navigate(Screen.PlantDetail.route(plant.id)) },
                         onRemove = {
                             collectionViewModel.togglePlantInCollection(plant.id, collectionId, true)
                         }

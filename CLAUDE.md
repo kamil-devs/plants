@@ -17,31 +17,44 @@ This is an Android project. Use Android Studio or Gradle from the command line:
 ./gradlew connectedAndroidTest
 
 # Run a single test class
-./gradlew test --tests "com.example.pruningapp.ExampleUnitTest"
+./gradlew test --tests "com.example.pruningapp.TaskGeneratorTest"
 ```
 
 Deploy to a connected device/emulator via Android Studio's run button or `./gradlew installDebug`.
 
 ## Architecture
 
-**Stack:** Kotlin + Jetpack Compose + Room + WorkManager + DataStore. No Hilt — dependencies are passed manually via `viewModel { }` factory lambdas or `application` context.
+**Stack:** Kotlin + Jetpack Compose + Room v13 + WorkManager + DataStore + Retrofit + Coil + ML Kit Translate. No Hilt — dependencies are wired manually through `App`-level lazy vals; ViewModels use `AndroidViewModel(application)` and cast to `(application as App).someRepository`.
 
 **Layer flow:** `Room DAOs` → `Repository` (suspend/Flow wrappers) → `ViewModel` (StateFlow) → `Screen` (Composable).
 
 **Package layout:**
-- `data/` — Room entities, DAOs, `AppDatabase`, `JsonImporter`, `NotificationPreferences` (DataStore)
-- `repository/` — `PlantRepository`, `TaskRepository`, `CollectionRepository`, `StatsRepository`
-- `viewmodel/` — one ViewModel per domain: `PlantViewModel`, `TaskViewModel`, `CollectionViewModel`, `StatsViewModel`, `NotificationSettingsViewModel`
+- `data/` — Room entities (`Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`, `PruningGuideCache`, `EncyclopediaSpecies`), DAOs, `AppDatabase`, `JsonImporter`, `EncyclopediaImporter`, `WeatherPreferences` (DataStore), `TaskStatus` enum
+- `domain/` — `WikipediaImageProvider` interface, `Mapper<I,O>` interface
+- `network/` — `WikipediaImageProviderImpl` (5-step Wikipedia image fallback)
+- `remote/` — `PerenualApiService`, `WikipediaApiService`, `WeatherApiService` (each has its own Retrofit instance), DTOs
+- `repository/` — `PlantRepository`, `TaskRepository`, `CollectionRepository`, `StatsRepository`, `PruningGuideRepository`, `WeatherRepository`
+- `viewmodel/` — one ViewModel per domain: `PlantViewModel`, `TaskViewModel`, `CollectionViewModel`, `StatsViewModel`, `WeatherViewModel`, `NotificationSettingsViewModel`, `PruningGuideViewModel`
 - `ui/screens/` — one file per screen; screens receive `NavController` and create their own ViewModel via `viewModel()`
-- `ui/components/` — shared composables (e.g. `PlantCard`)
-- `ui/theme/` — static green palette, dynamic color disabled
-- `worker/` — `NotificationWorker` (WorkManager)
+- `ui/components/` — `MagazineCard`, `FloatingPillNav`, `ScreenTemplate` (UiState slot API), `CardDisplayable`
+- `ui/theme/` — botanical green palette, Google Fonts (Lora/DM Sans/DM Mono), dynamic color disabled
+- `worker/` — `NotificationWorker`, `GlobalSyncWorker`, `WikipediaSyncWorker`
+- `navigation/` — `Screen` sealed class with all routes
 
-**Navigation** (`MainActivity.kt`): single `NavHost` with a 5-tab bottom bar. Routes: `dashboard`, `plants`, `calendar`, `collections`, `settings`, plus `plant_detail/{plantId}`, `add_plant`, `edit_plant/{plantId}`, `stats`, `add_collection`, `edit_collection/{collectionId}`, `collection_detail/{collectionId}`.
+**Navigation** (`MainActivity.kt`): single `NavHost` + floating pill nav (4 tabs). Pill tabs: `Dashboard`, `Plants`, `Calendar`, `Encyclopedia`. Secondary routes (no pill): `Collections`, `Settings`, `Stats`, `AddPlant`, `PlantDetail`, `EditPlant`, `EncyclopediaDetail`, `AddCollection`, `EditCollection`, `CollectionDetail`.
 
-**Database** (`AppDatabase`, version 5): entities are `Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`. Current migration is `MIGRATION_4_5`; `fallbackToDestructiveMigration()` is also set.
+**Database** (`AppDatabase`, version 13): entities are `Plant`, `PruningRule`, `Task`, `Collection`, `PlantCollectionCrossRef`, `PruningGuideCache`, `EncyclopediaSpecies`. Migrations 4 through 13 are defined; `fallbackToDestructiveMigration()` is also set (safe for dev). `exportSchema = true` — schema files live in `app/schemas/`.
 
-**Startup import** (`App.kt`): `JsonImporter` loads `assets/plants.json` once when `plantDao().getPlantCount() == 0`.
+**Startup import** (`App.kt`): `EncyclopediaImporter` runs first (populates `encyclopedia_species` when empty), then `JsonImporter` runs (populates `plants` when count is 0 — reads perenualId from encyclopedia as SSOT).
+
+## API keys
+
+Both keys must be in `local.properties` (gitignored):
+```
+PERENUAL_API_KEY=...
+WEATHER_API_KEY=...
+```
+They are injected into `BuildConfig` in `app/build.gradle`. Debug builds skip live Perenual calls and use mock data for 4 known species (see `PlantRepository.applyMockData`). If `WEATHER_API_KEY` is blank, weather is silently disabled.
 
 ## Key domain rules
 
@@ -49,12 +62,16 @@ Deploy to a connected device/emulator via Android Studio's run button or `./grad
 - `Plant.instructions` is stored as a JSON array string (parsed/serialized with Gson).
 - Dates in `plants.json` and `PruningRule` use `MM-dd` format; `Task` dates use `yyyy-MM-dd`.
 - Only plants where `isUserAdded = true` are editable/deletable. The Edit button in `PlantDetailScreen` is gated on this flag.
+- `owned = true` gates the dashboard/calendar "my plants" view. Distinct from `isUserAdded`.
 - Pinned plants (`pinned = true`) sort to the top of `PlantListScreen`.
-- `StatsScreen` is reachable via route `stats` but is **not** in the bottom nav bar.
+- `StatsScreen` is reachable via route `stats` but is **not** in the pill nav.
+- `Collections` screen is reachable from the Plants toolbar and from the Dashboard collections card.
+- Task generation: `TaskGenerator.generateForRule(plantId, start, end, type, db)` is the single source — used by both `JsonImporter` and `PlantRepository.replacePruningRulesAndTasks`.
 
 ## Kotlin/Compose conventions
 
 - Use explicit imports (no wildcard imports) in screen files.
-- Polish diacritics (ą ę ó ś ź ż ć ń ł) are safe in Kotlin strings. Typographic quotes „" (U+201E/U+201D) and ellipsis … (U+2026) are **not** — they cause parser errors; use `"..."` instead.
+- Polish diacritics (ą ę ó ś ź ż ć ń ł) are safe in Kotlin strings and XML. Typographic quotes "" (U+201E/U+201D) and ellipsis ... (U+2026) are **not** safe in `.kt` files — use `"..."` instead.
 - State in screens: prefer `var x by remember { mutableStateOf(...) }` for simple UI state; use `SnapshotStateList` for mutable lists that drive recomposition.
 - ViewModels expose `StateFlow`; screens collect with `collectAsState()`.
+- Navigation: always use `Screen.Foo.route` or `Screen.Foo.route(id)` — never raw strings.

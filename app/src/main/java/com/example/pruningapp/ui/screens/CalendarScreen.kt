@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.TaskStatus
 import com.example.pruningapp.data.isDone
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.viewmodel.PlantViewModel
 import com.example.pruningapp.viewmodel.TaskViewModel
 import java.time.LocalDate
@@ -281,7 +282,7 @@ private fun MonthlyView(
                             taskViewModel.updateTaskStatus(task, if (done) TaskStatus.DONE else TaskStatus.PENDING)
                         },
                         onClick = {
-                            plant?.let { navController.navigate("plant_detail/${it.id}") }
+                            plant?.let { navController.navigate(Screen.PlantDetail.route(it.id)) }
                         }
                     )
                 }
@@ -392,7 +393,7 @@ private fun WeeklyView(
                                     taskViewModel.updateTaskStatus(task, if (done) TaskStatus.DONE else TaskStatus.PENDING)
                                 },
                                 onClick = {
-                                    plant?.let { navController.navigate("plant_detail/${it.id}") }
+                                    plant?.let { navController.navigate(Screen.PlantDetail.route(it.id)) }
                                 }
                             )
                         }

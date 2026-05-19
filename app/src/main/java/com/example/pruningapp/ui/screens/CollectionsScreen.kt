@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.data.Collection
 import com.example.pruningapp.data.CollectionWithPlants
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.viewmodel.CollectionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,7 +93,7 @@ fun CollectionsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("add_collection") }) {
+            FloatingActionButton(onClick = { navController.navigate(Screen.AddCollection.route) }) {
                 Icon(Icons.Default.Add, contentDescription = "Nowa kolekcja")
             }
         }
@@ -137,8 +138,8 @@ fun CollectionsScreen(
                 items(collections, key = { it.collection.id }) { item ->
                     CollectionCard(
                         item = item,
-                        onClick = { navController.navigate("collection_detail/${item.collection.id}") },
-                        onEdit = { navController.navigate("edit_collection/${item.collection.id}") },
+                        onClick = { navController.navigate(Screen.CollectionDetail.route(item.collection.id)) },
+                        onEdit = { navController.navigate(Screen.EditCollection.route(item.collection.id)) },
                         onDelete = { toDeleteState.value = item }
                     )
                 }

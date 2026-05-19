@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pruningapp.R
 import com.example.pruningapp.data.Plant
+import com.example.pruningapp.navigation.Screen
 import com.example.pruningapp.ui.components.MagazineCard
 import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
@@ -148,7 +149,7 @@ fun PlantListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.screen_my_plants)) },
                 actions = {
-                    IconButton(onClick = { navController.navigate("collections") }) {
+                    IconButton(onClick = { navController.navigate(Screen.Collections.route) }) {
                         Icon(
                             Icons.Default.Folder,
                             contentDescription = stringResource(R.string.cd_collections)
@@ -161,7 +162,7 @@ fun PlantListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("add_plant") }) {
+            FloatingActionButton(onClick = { navController.navigate(Screen.AddPlant.route) }) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = stringResource(R.string.cd_add_plant)
@@ -275,7 +276,7 @@ fun PlantListScreen(
                                 owned = plant.owned,
                                 pinned = plant.pinned,
                                 syncPending = plant.hasPendingSync(),
-                                onClick = { navController.navigate("plant_detail/${plant.id}") },
+                                onClick = { navController.navigate(Screen.PlantDetail.route(plant.id)) },
                                 onToggleOwned = { plantViewModel.toggleOwned(plant) },
                                 onTogglePinned = { plantViewModel.togglePinned(plant) }
                             )

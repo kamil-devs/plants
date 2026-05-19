@@ -26,7 +26,13 @@ android {
             useSupportLibrary true
         }
         buildConfigField "String", "PERENUAL_API_KEY", "\"${localProperties.getProperty('PERENUAL_API_KEY', '')}\""
-        buildConfigField "String", "WEATHER_API_KEY", "\"59e042e3eff5e86e19fc8081761debd9\""
+        buildConfigField "String", "WEATHER_API_KEY", "\"${localProperties.getProperty('WEATHER_API_KEY', '')}\""
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
     }
 
     buildTypes {
@@ -35,6 +41,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

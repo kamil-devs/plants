@@ -6,15 +6,13 @@ import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.Plant
 import com.example.pruningapp.data.PruningGuideCache
 import com.example.pruningapp.data.PruningRule
-import com.example.pruningapp.data.Task
+import com.example.pruningapp.data.generateTasksForRule
 import com.example.pruningapp.domain.WikipediaImageProvider
 import com.example.pruningapp.remote.PerenualApiService
 import com.example.pruningapp.util.PlantDescriptionTranslator
 import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
 import java.net.UnknownHostException
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 // Lean Repository: jedyną odpowiedzialnością jest orkiestracja strumieni danych.
 // Logika pobierania mediów delegowana do WikipediaImageProvider (wstrzykiwana przez konstruktor).
@@ -135,30 +133,11 @@ class PlantRepository(
         db.plantDao().deletePruningRulesForPlant(plantId)
         db.taskDao().deleteTasksForPlant(plantId)
 
-        val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-
         rules.forEach { (type, start, end) ->
             db.plantDao().insertPruningRule(
                 PruningRule(plantId = plantId, startMonthDay = start, endMonthDay = end, type = type)
             )
-            for (yearOffset in 0..1) {
-                val year = today.year + yearOffset
-                try {
-                    val startDate = LocalDate.parse("$year-$start", formatter)
-                    val endDate = LocalDate.parse("$year-$end", formatter)
-                    if (endDate.isBefore(today)) continue
-                    db.taskDao().insertTask(
-                        Task(
-                            plantId = plantId,
-                            date = startDate.format(formatter),
-                            endDate = endDate.format(formatter),
-                            type = type,
-                            status = "pending"
-                        )
-                    )
-                } catch (_: Exception) {}
-            }
+            db.generateTasksForRule(plantId, start, end, type)
         }
     }
 
