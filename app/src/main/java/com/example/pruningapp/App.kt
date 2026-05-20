@@ -10,8 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.EncyclopediaImporter
-import com.example.pruningapp.data.JsonImporter
-import com.example.pruningapp.network.WikipediaImageProviderImpl
+import com.example.pruningapp.data.PlantSeeder
 import com.example.pruningapp.repository.CollectionRepository
 import com.example.pruningapp.repository.PlantRepository
 import com.example.pruningapp.repository.PruningGuideRepository
@@ -37,11 +36,7 @@ class App : Application(), ImageLoaderFactory {
 
     val database by lazy { AppDatabase.getDatabase(this) }
 
-    val wikipediaImageProvider by lazy { WikipediaImageProviderImpl.create(this) }
-
-    val plantRepository by lazy {
-        PlantRepository(database, wikiImageProvider = wikipediaImageProvider)
-    }
+    val plantRepository by lazy { PlantRepository(database) }
 
     val taskRepository by lazy { TaskRepository(database) }
 
@@ -92,7 +87,7 @@ class App : Application(), ImageLoaderFactory {
                 EncyclopediaImporter(this@App, database).import()
             }
             if (database.plantDao().getPlantCount() == 0) {
-                JsonImporter(this@App, database).import()
+                PlantSeeder.seed(database)
             }
         }
 

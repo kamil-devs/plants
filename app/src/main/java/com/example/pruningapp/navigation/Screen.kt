@@ -26,4 +26,5 @@ sealed class Screen(val route: String) {
     object CollectionDetail : Screen("collection_detail/{collectionId}") {
         fun route(collectionId: Long) = "collection_detail/$collectionId"
     }
+    object Katalog : Screen("katalog")
 }

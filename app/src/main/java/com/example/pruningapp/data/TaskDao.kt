@@ -14,6 +14,10 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE endDate >= :today ORDER BY date ASC")
     fun getUpcomingTasks(today: String): Flow<List<Task>>
 
+    // Zadania aktywne lub zaczynające się w ciągu najbliższych ~90 dni
+    @Query("SELECT * FROM tasks WHERE endDate >= :today AND date <= :cutoff ORDER BY date ASC")
+    fun getTasksInWindow(today: String, cutoff: String): Flow<List<Task>>
+
     // Aktywne zadania na powiadomienia (okno otwarte dziś, status pending)
     @Query("SELECT * FROM tasks WHERE date <= :today AND endDate >= :today AND status = 'pending'")
     suspend fun getActiveTasksForToday(today: String): List<Task>

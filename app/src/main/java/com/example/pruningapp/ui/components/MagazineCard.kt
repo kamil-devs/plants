@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,14 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
-import com.example.pruningapp.R
 
 // MagazineCard jest niezależny od modeli biznesowych dzięki interfejsowi CardDisplayable.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,11 +45,13 @@ fun MagazineCard(
     aspectRatio: Float = 0.72f,
     owned: Boolean = false,
     pinned: Boolean = false,
-    syncPending: Boolean = false,
     onToggleOwned: (() -> Unit)? = null,
     onTogglePinned: (() -> Unit)? = null
 ) {
-    val imageUrl = remember(item.imageUrl) { item.imageUrl }
+    val imageModel = remember(item.localDrawableResId, item.imageUrl) {
+        if (item.localDrawableResId != 0) item.localDrawableResId
+        else item.imageUrl.takeIf { !it.isNullOrBlank() }
+    }
 
     Card(
         onClick = onClick,
@@ -68,7 +65,7 @@ fun MagazineCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             SubcomposeAsyncImage(
-                model = imageUrl.takeIf { !it.isNullOrBlank() },
+                model = imageModel,
                 contentDescription = item.title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -95,14 +92,6 @@ fun MagazineCard(
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (syncPending) {
-                    ActionCircleButton(
-                        icon = Icons.Default.Sync,
-                        contentDescription = stringResource(R.string.cd_sync_pending),
-                        active = false,
-                        activeColor = Color.White
-                    )
-                }
                 if (onTogglePinned != null) {
                     ActionCircleButton(
                         icon = Icons.Default.PushPin,
@@ -121,23 +110,6 @@ fun MagazineCard(
                         onClick = onToggleOwned
                     )
                 }
-            }
-
-            // Category chip — glassmorphism style
-            Surface(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .align(Alignment.TopStart),
-                shape = RoundedCornerShape(50),
-                color = Color.Black.copy(alpha = 0.35f),
-                contentColor = Color.White
-            ) {
-                Text(
-                    text = item.category,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp
-                )
             }
 
             // Title / subtitle at bottom
@@ -201,7 +173,7 @@ private fun ActionCircleButton(
 ) {
     Surface(
         onClick = onClick ?: {},
-        modifier = Modifier.size(32.dp),
+        modifier = Modifier.size(48.dp),
         enabled = onClick != null,
         shape = CircleShape,
         color = if (active) activeColor else Color.Black.copy(alpha = 0.3f),
@@ -211,7 +183,7 @@ private fun ActionCircleButton(
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
     }

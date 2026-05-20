@@ -44,6 +44,7 @@ import com.example.pruningapp.ui.screens.CalendarScreen
 import com.example.pruningapp.ui.screens.CollectionDetailScreen
 import com.example.pruningapp.ui.screens.CollectionsScreen
 import com.example.pruningapp.ui.screens.DashboardScreen
+import com.example.pruningapp.ui.screens.KatalogRoslinScreen
 import com.example.pruningapp.ui.screens.EditPlantScreen
 import com.example.pruningapp.ui.screens.PerenualPlantDetailScreen
 import com.example.pruningapp.ui.screens.PerenualPlantsScreen
@@ -176,6 +177,9 @@ fun MainApp(
                 composable(Screen.CollectionDetail.route) { backStackEntry ->
                     val collectionId = backStackEntry.arguments?.getString("collectionId")?.toLongOrNull() ?: 0L
                     CollectionDetailScreen(navController, collectionId)
+                }
+                composable(Screen.Katalog.route) {
+                    KatalogRoslinScreen(navController)
                 }
             }
 

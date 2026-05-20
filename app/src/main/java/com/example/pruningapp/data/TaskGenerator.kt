@@ -21,7 +21,11 @@ fun computeTaskDates(
     for (yearOffset in 0..1) {
         val year = today.year + yearOffset
         val startDate = try { LocalDate.parse("$year-$startMonthDay", FORMATTER) } catch (_: Exception) { continue }
-        val endDate = try { LocalDate.parse("$year-$endMonthDay", FORMATTER) } catch (_: Exception) { continue }
+        var endDate = try { LocalDate.parse("$year-$endMonthDay", FORMATTER) } catch (_: Exception) { continue }
+        // Cross-year window (e.g. Nov–Feb): shift endDate to the following year.
+        if (endDate.isBefore(startDate)) {
+            endDate = try { LocalDate.parse("${year + 1}-$endMonthDay", FORMATTER) } catch (_: Exception) { continue }
+        }
         if (endDate.isBefore(today)) continue
         result += startDate to endDate
     }

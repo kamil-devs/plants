@@ -86,6 +86,13 @@ import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+private fun currentSeasonGreeting(): String = when (LocalDate.now().monthValue) {
+    in 3..5  -> "Mamy wiosne!"
+    in 6..8  -> "Jest lato!"
+    in 9..11 -> "Nadeszla jesien!"
+    else     -> "Trwa zima!"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -295,6 +302,11 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = currentSeasonGreeting(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(

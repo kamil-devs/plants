@@ -53,22 +53,36 @@ import com.example.pruningapp.ui.components.PlantCardItem
 import com.example.pruningapp.viewmodel.PlantViewModel
 
 private val typeLabels = mapOf(
-    "owocowa" to "Owocowe",
     "ozdobna" to "Ozdobne",
-    "ozdobne drzewo" to "Ozdobne drzewa"
+    "iglaki" to "Iglaki",
+    "owocowe" to "Owocowe",
+    "owocowa" to "Owocowe",
+    "domowe" to "Domowe",
+    "ziolowe" to "Ziolowe i balkon",
+    "ozdobne drzewo" to "Ozdobne drzewa",
+    "sad" to "Owocowe"
 )
 
 private fun Plant.categoryLabel(): String =
     typeLabels[type] ?: type.replaceFirstChar { it.uppercase() }
 
-private fun Plant.hasPendingSync(): Boolean =
-    owned && !apiDataSynced && perenualId != null
+private fun Plant.categoryDrawable(): Int = when (type) {
+    "ozdobna", "ozdobne drzewo" -> R.drawable.plant_ozdobna
+    "iglaki", "iglak" -> R.drawable.plant_iglaki
+    "owocowe", "owocowa", "sad" -> R.drawable.plant_owocowe
+    "domowe" -> R.drawable.plant_domowe
+    "ziolowe" -> R.drawable.plant_ziolowe
+    else -> 0
+}
+
+private fun Plant.hasPendingSync(): Boolean = false
 
 private fun Plant.toCardItem(): PlantCardItem = PlantCardItem(
     title = name,
-    subtitle = categoryLabel(),
+    subtitle = if (botanicalName.isNotBlank()) botanicalName else categoryLabel(),
     imageUrl = wikiImageUrl ?: apiImageUrl,
-    category = categoryLabel()
+    category = categoryLabel(),
+    localDrawableResId = categoryDrawable()
 )
 
 // Alternating aspect ratios create natural stagger between columns.
@@ -162,7 +176,7 @@ fun PlantListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate(Screen.AddPlant.route) }) {
+            FloatingActionButton(onClick = { navController.navigate(Screen.Katalog.route) }) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = stringResource(R.string.cd_add_plant)
@@ -275,7 +289,6 @@ fun PlantListScreen(
                                 aspectRatio = aspectRatioFor(index),
                                 owned = plant.owned,
                                 pinned = plant.pinned,
-                                syncPending = plant.hasPendingSync(),
                                 onClick = { navController.navigate(Screen.PlantDetail.route(plant.id)) },
                                 onToggleOwned = { plantViewModel.toggleOwned(plant) },
                                 onTogglePinned = { plantViewModel.togglePinned(plant) }

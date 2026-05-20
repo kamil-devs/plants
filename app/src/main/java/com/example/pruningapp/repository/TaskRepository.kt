@@ -12,6 +12,9 @@ class TaskRepository(private val db: AppDatabase) {
     fun getUpcomingTasks(today: String): Flow<List<Task>> =
         db.taskDao().getUpcomingTasks(today)
 
+    fun getUpcomingTasksInWindow(today: String, cutoff: String): Flow<List<Task>> =
+        db.taskDao().getTasksInWindow(today, cutoff)
+
     suspend fun getActiveTasksForToday(today: String): List<Task> =
         db.taskDao().getActiveTasksForToday(today)
 

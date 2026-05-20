@@ -1,87 +1,35 @@
 package com.example.pruningapp.worker
 
 import android.content.Context
-import android.util.Log
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.pruningapp.data.AppDatabase
 import com.example.pruningapp.data.SyncPreferences
-import com.example.pruningapp.repository.PlantRepository
-import kotlinx.coroutines.delay
-import java.util.concurrent.TimeUnit
 
+// Perenual API sync removed — app is fully offline-first.
+// Worker retained so existing enqueue calls in App.kt compile without changes.
 class GlobalSyncWorker(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val db = AppDatabase.getDatabase(applicationContext)
-        val repo = PlantRepository(db)
-        val syncPrefs = SyncPreferences(applicationContext)
-
-        val encyclopediaNames = db.encyclopediaSpeciesDao().getAll()
-            .map { it.polishName.lowercase() }
-            .toSet()
-
-        val pending = db.plantDao().getUnsyncedOwnedPlants()
-            .filter { plant ->
-                plant.perenualId != null ||
-                    plant.name.lowercase() in encyclopediaNames
-            }
-
-        var failCount = 0
-        var lastError: String? = null
-
-        for ((index, plant) in pending.withIndex()) {
-            try {
-                repo.syncPlantFromApi(plant.id)
-            } catch (e: Exception) {
-                failCount++
-                lastError = e.message
-                Log.e(TAG, "Sync failed for plant id=${plant.id} ('${plant.name}'): ${e.message}")
-            }
-
-            if (index < pending.lastIndex) delay(5_000)
-        }
-
-        if (failCount > 0) {
-            Log.w(TAG, "GlobalSyncWorker finished with $failCount error(s) out of ${pending.size}")
-        }
-
-        syncPrefs.recordResult(
-            total = pending.size,
-            failCount = failCount,
-            lastError = lastError
-        )
-
+        SyncPreferences(applicationContext).recordResult(total = 0, failCount = 0, lastError = null)
         return Result.success()
     }
 
     companion object {
-        private const val TAG = "GlobalSyncWorker"
         private const val WORK_NAME = "global_perenual_sync"
 
         fun enqueue(context: Context) {
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, buildRequest())
-        }
-
-        private fun buildRequest(): OneTimeWorkRequest =
-            OneTimeWorkRequestBuilder<GlobalSyncWorker>()
-                .setConstraints(
-                    Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build()
+                .enqueueUniqueWork(
+                    WORK_NAME,
+                    ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<GlobalSyncWorker>().build()
                 )
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
-                .build()
+        }
     }
 }

@@ -19,9 +19,11 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     val today: String = LocalDate.now().format(formatter)
+    private val windowCutoff: String = LocalDate.now().plusDays(90).format(formatter)
 
-    val upcomingTasks: StateFlow<List<Task>> = taskRepository.getUpcomingTasks(today)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val upcomingTasks: StateFlow<List<Task>> =
+        taskRepository.getUpcomingTasksInWindow(today, windowCutoff)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTasks: StateFlow<List<Task>> = taskRepository.getAllTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

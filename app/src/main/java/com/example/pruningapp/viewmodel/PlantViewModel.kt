@@ -50,6 +50,10 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setOwned(plantId: Long, owned: Boolean) {
+        viewModelScope.launch { plantRepository.setOwned(plantId, owned) }
+    }
+
     fun togglePinned(plant: Plant) {
         viewModelScope.launch { plantRepository.setPinned(plant.id, !plant.pinned) }
     }
